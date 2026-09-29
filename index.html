@@ -1,0 +1,1420 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>SalesGPT Lisa</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: dark left rail (from the reference screenshot) + scrolling work area; the rail becomes a top strip on phones.
+   Lisa's voice is marked with one violet-leaning tone so interpretation always reads apart from raw data. */
+:root{
+  --bg:#f3f4f7; --panel:#ffffff; --rail:#171a22; --rail-fg:#aeb3c2; --rail-active:#272b38;
+  --fg:#151823; --muted:#5f677a; --line:#e1e4eb; --accent:#3a6cf4; --accent-soft:#e6edfe;
+  --lisa:#6b4fd8; --lisa-soft:#efebfd;
+  --good:#1c9a60; --good-soft:#e0f4ea; --warn:#b4731a; --warn-soft:#fbf0dc; --bad:#d24343; --bad-soft:#fbe6e6;
+  --font:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif; --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#111319; --panel:#191c25; --rail:#0d0f14; --rail-fg:#99a0b2; --rail-active:#262a37;
+  --fg:#e8eaf0; --muted:#939aac; --line:#2a2e3b; --accent:#6f95ff; --accent-soft:#212b47;
+  --lisa:#a893ff; --lisa-soft:#2a2445;
+  --good:#46c38a; --good-soft:#16302a; --warn:#e2a94c; --warn-soft:#382d19; --bad:#f07171; --bad-soft:#3a1f23; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111319; --panel:#191c25; --rail:#0d0f14; --rail-fg:#99a0b2; --rail-active:#262a37;
+  --fg:#e8eaf0; --muted:#939aac; --line:#2a2e3b; --accent:#6f95ff; --accent-soft:#212b47;
+  --lisa:#a893ff; --lisa-soft:#2a2445;
+  --good:#46c38a; --good-soft:#16302a; --warn:#e2a94c; --warn-soft:#382d19; --bad:#f07171; --bad-soft:#3a1f23; color-scheme:dark}
+html,body{height:100%}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:14px;line-height:1.5}
+*{box-sizing:border-box}
+.app{display:grid;grid-template-columns:216px 1fr;height:100%}
+nav.rail{background:var(--rail);padding-block:18px;display:flex;flex-direction:column;gap:3px;padding-inline:10px}
+.brand{color:#fff;font-weight:800;font-size:16px;padding:4px 12px 16px;letter-spacing:.1px}
+.brand small{display:flex;align-items:center;gap:6px;color:var(--rail-fg);font-weight:500;font-size:12px;margin-top:2px}
+.brand small i{width:7px;height:7px;border-radius:50%;background:#46c38a;display:inline-block}
+nav.rail button{all:unset;cursor:pointer;color:var(--rail-fg);padding:10px 12px;border-radius:9px;font-size:14.5px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+nav.rail button:hover{color:#fff}
+nav.rail button[aria-current="page"]{background:var(--rail-active);color:#fff;font-weight:600}
+nav.rail button:focus-visible{outline:2px solid var(--accent)}
+.count{background:var(--accent);color:#fff;font-size:11px;border-radius:99px;padding:0 7px;font-weight:700}
+.rail-foot{margin-top:auto;padding:12px;color:var(--rail-fg);font-size:11.5px;line-height:1.4}
+main{overflow:auto;padding-block:26px;padding-inline:30px;min-width:0}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+h1{font-size:24px;margin:0;text-wrap:balance;letter-spacing:-.2px}
+.sub{color:var(--muted);margin:2px 0 0}
+h2{font-size:15px;margin:0 0 12px}
+h3{font-size:13.5px;margin:0 0 8px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px;min-width:0}
+.grid{display:grid;gap:14px}
+.mt{margin-top:14px}
+.kpis{grid-template-columns:repeat(6,minmax(0,1fr))}
+.kpi .label{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.kpi .val{font-family:var(--mono);font-size:26px;font-weight:500;margin-top:4px;font-variant-numeric:tabular-nums;line-height:1.2}
+.kpi .note{color:var(--muted);font-size:12px;margin-top:2px}
+.bar{height:7px;background:var(--line);border-radius:99px;overflow:hidden;min-width:60px}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.kpi .bar{margin-top:8px}
+.two{grid-template-columns:minmax(0,1.55fr) minmax(0,1fr)}
+.halves{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+th{text-align:left;color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.04em;padding:8px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap;vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.num{text-align:right;font-family:var(--mono)}
+th.num{font-family:var(--font)}
+.pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;white-space:nowrap}
+.p-good{background:var(--good-soft);color:var(--good)} .p-warn{background:var(--warn-soft);color:var(--warn)}
+.p-bad{background:var(--bad-soft);color:var(--bad)} .p-info{background:var(--accent-soft);color:var(--accent)}
+.p-mute{background:var(--line);color:var(--muted)} .p-lisa{background:var(--lisa-soft);color:var(--lisa)}
+.btn{all:unset;cursor:pointer;background:var(--accent);color:#fff;font-weight:600;padding:9px 15px;border-radius:8px;font-size:14px;text-align:center;white-space:nowrap}
+.btn:hover{filter:brightness(1.08)} .btn:focus-visible,.linkbtn:focus-visible,.chip:focus-visible,.seg button:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn.small{padding:5px 11px;font-size:13px}
+.btn.lisa{background:var(--lisa)}
+.btn.danger{background:var(--bad)}
+.btn[disabled]{opacity:.45;cursor:not-allowed;filter:none}
+.linkbtn{all:unset;cursor:pointer;color:var(--accent);font-weight:600}
+.linkbtn.rm{color:var(--bad);font-size:13px}
+label{display:block;font-weight:600;font-size:13px;margin-bottom:6px}
+.hint{color:var(--muted);font-size:12.5px;font-weight:400}
+input,select,textarea{width:100%;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 11px}
+textarea{resize:vertical}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px}
+input[type=checkbox],input[type=radio]{width:17px;height:17px;flex:none;accent-color:var(--accent);padding:0}
+.form{display:grid;gap:16px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.between{justify-content:space-between}
+.muted{color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;padding:3px;background:var(--panel);flex-wrap:wrap}
+.seg button{all:unset;cursor:pointer;padding:5px 12px;border-radius:6px;font-size:13px;color:var(--muted);font-weight:500}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#fff;font-weight:600}
+.switch{all:unset;cursor:pointer;width:38px;height:22px;border-radius:99px;background:var(--line);position:relative;flex:none;display:inline-block;vertical-align:middle}
+.switch::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.switch[aria-checked="true"]{background:var(--good)}
+.switch[aria-checked="true"]::after{left:19px}
+.switch:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.switch[disabled]{opacity:.6;cursor:not-allowed}
+.lisa-card{border:1px solid color-mix(in srgb,var(--lisa) 35%,var(--line));background:var(--lisa-soft);border-radius:var(--r);padding:16px 18px;min-width:0}
+.lisa-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.avatar{width:28px;height:28px;border-radius:50%;background:var(--lisa);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px;flex:none}
+.lisa-head b{font-size:14px} .lisa-head span{color:var(--muted);font-size:12px}
+.qa{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.qa .q{font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;font-weight:700;color:var(--lisa)}
+.qa .a{font-size:14.5px;margin-top:3px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{all:unset;cursor:pointer;font-size:12.5px;background:var(--panel);border:1px solid var(--line);color:var(--fg);padding:4px 10px;border-radius:99px}
+.chip:hover{border-color:var(--lisa);color:var(--lisa)}
+.var{all:unset;cursor:pointer;font-family:var(--mono);font-size:12px;background:var(--accent-soft);color:var(--accent);padding:3px 9px;border-radius:6px}
+.answer{background:var(--panel);border-radius:8px;padding:10px 12px;margin-top:10px;font-size:14px;border:1px solid var(--line)}
+.stepper{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
+.stepper button{all:unset;cursor:pointer;display:flex;align-items:center;gap:8px;padding:7px 12px 7px 8px;border-radius:99px;border:1px solid var(--line);background:var(--panel);font-size:13px;color:var(--muted);font-weight:600}
+.stepper button b{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--line);color:var(--muted);font-size:12px}
+.stepper button[aria-current="step"]{border-color:var(--accent);color:var(--fg)}
+.stepper button[aria-current="step"] b{background:var(--accent);color:#fff}
+.stepper button.done b{background:var(--good);color:#fff}
+.stepcard{border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px;background:var(--bg)}
+.stepcard .top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.delay{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted)}
+.delay input{width:64px;padding:5px 8px}
+.preview{border:1px solid var(--line);border-radius:8px;background:var(--bg);overflow:hidden}
+.preview .meta{padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);display:grid;gap:2px}
+.preview .meta b{color:var(--fg)}
+.preview .body{padding:14px;white-space:pre-wrap}
+.miss{background:var(--bad-soft);color:var(--bad);border-radius:3px;padding:0 3px}
+.callout{border-radius:8px;padding:10px 12px;font-size:13px;background:var(--warn-soft);color:var(--warn)}
+.callout.info{background:var(--accent-soft);color:var(--accent)}
+.callout.good{background:var(--good-soft);color:var(--good)}
+.check{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.check:last-child{border-bottom:0}
+.check > div{flex:1;min-width:0}
+.days{display:flex;gap:6px;flex-wrap:wrap}
+.days label{margin:0;display:flex;align-items:center;gap:5px;border:1px solid var(--line);padding:5px 10px;border-radius:8px;font-weight:500;cursor:pointer}
+.queue{display:flex;height:16px;border-radius:99px;overflow:hidden;background:var(--line)}
+.queue i{display:block;height:100%}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:8px}
+.legend span::before{content:"";display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;background:var(--c)}
+.inbox{display:grid;grid-template-columns:minmax(0,340px) minmax(0,1fr);gap:14px;align-items:start}
+.threads{padding:0;overflow:hidden}
+.msg{all:unset;display:block;cursor:pointer;padding:11px 14px;border-bottom:1px solid var(--line);width:100%;box-sizing:border-box}
+.msg:hover,.msg.sel{background:var(--accent-soft)}
+.msg .who{font-weight:600;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.msg .who .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msg.unread .n::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block;margin-right:6px}
+.msg .snip{color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.msg time{color:var(--muted);font-weight:400;font-size:12px;white-space:nowrap}
+.star{all:unset;cursor:pointer;font-size:17px;color:var(--muted);line-height:1}
+.star[aria-pressed="true"]{color:var(--warn)}
+.bubble{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--bg)}
+.bubble.them{background:var(--panel);border-color:color-mix(in srgb,var(--accent) 35%,var(--line))}
+.bubble .h{display:flex;justify-content:space-between;gap:10px;font-size:12.5px;color:var(--muted);margin-bottom:6px;flex-wrap:wrap}
+.bubble .h b{color:var(--fg)}
+.bubble .t{white-space:pre-wrap}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px 16px;font-size:13px}
+.facts div span{display:block;color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+.hbar{display:grid;grid-template-columns:minmax(0,150px) minmax(0,1fr) 74px;gap:10px;align-items:center;margin-bottom:9px}
+.hbar .track{height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+.hbar .track i{display:block;height:100%;border-radius:99px}
+.wide .hbar{grid-template-columns:minmax(0,290px) minmax(0,1fr) 74px}
+@media (max-width:720px){.wide .hbar{grid-template-columns:minmax(0,130px) minmax(0,1fr) 56px}}
+.name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cname{all:unset;cursor:pointer;font-weight:700;color:var(--fg)}
+.cname:hover{color:var(--accent);text-decoration:underline}
+.bell{all:unset;cursor:pointer;position:relative;height:36px;padding:0 12px;gap:7px;border-radius:9px;border:1px solid var(--line);background:var(--panel);display:inline-flex;align-items:center;color:var(--fg);flex:none;font-weight:600;font-size:13.5px}
+@media (max-width:980px){.bell-label{display:none}.bell{padding:0 9px}}
+.bell:hover{border-color:var(--accent)} .bell:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+.bell .count{position:absolute;top:-7px;right:-7px;padding:0 6px;line-height:17px;background:var(--bad)}
+.scrim{position:fixed;inset:0;background:rgba(10,12,18,.35);z-index:20}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(380px,100%);background:var(--panel);border-left:1px solid var(--line);z-index:21;display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-shadow:-8px 0 24px rgba(0,0,0,.12)}
+.ntf{all:unset;cursor:pointer;display:flex;gap:10px;padding:12px 16px;border-top:1px solid var(--line);width:100%;box-sizing:border-box}
+.ntf:hover{background:var(--accent-soft)}
+.ntf > i{width:9px;height:9px;border-radius:50%;flex:none;margin-top:6px}
+.ntf .t{display:block;font-size:13.5px}
+.ntf.unread .t{font-weight:700}
+.ntf time{display:block;font-size:12px;color:var(--muted)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.kebab{all:unset;cursor:pointer;width:32px;height:32px;border-radius:8px;display:grid;place-items:center;font-size:20px;line-height:1;color:var(--muted);border:1px solid transparent}
+.kebab:hover,.kebab[aria-expanded="true"]{border-color:var(--line);background:var(--bg);color:var(--fg)}
+.kebab:focus-visible{outline:2px solid var(--fg);outline-offset:1px}
+.menu{position:fixed;z-index:30;min-width:200px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:5px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
+.menu button{all:unset;display:block;box-sizing:border-box;width:100%;padding:8px 12px;border-radius:6px;cursor:pointer;font-size:13.5px}
+.menu button:hover,.menu button:focus-visible{background:var(--accent-soft)}
+.menu button.bad{color:var(--bad)} .menu button.armed{background:var(--bad);color:#fff;font-weight:600}
+.menu hr{border:0;border-top:1px solid var(--line);margin:5px 0}
+.sugpanel{display:flex;flex-direction:column}
+.sug{display:grid;gap:4px;padding:10px 0;border-top:1px solid var(--line)}
+.sug-tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--c);white-space:nowrap}
+.sug-tag::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--c);margin-right:6px}
+.sug-text{font-size:13.5px}
+.sug .linkbtn{justify-self:start}
+.toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:8px;font-weight:600;z-index:10;max-width:calc(100% - 32px)}
+svg text{fill:var(--muted);font-family:var(--mono);font-size:10px}
+.demo{font-size:12px;color:var(--muted);border:1px dashed var(--line);border-radius:8px;padding:6px 10px;margin-bottom:14px}
+@media (max-width:1200px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:980px){.two,.halves,.inbox,.qa{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:720px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+  nav.rail{flex-direction:row;overflow-x:auto;padding-block:8px}
+  .brand,.rail-foot{display:none}
+  nav.rail button{white-space:nowrap;padding:8px 12px;font-size:13.5px}
+  main{padding-inline:16px;padding-block:18px}
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .hbar{grid-template-columns:minmax(0,96px) minmax(0,1fr) 64px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="app">
+  <nav class="rail" id="nav" aria-label="Main"></nav>
+  <main id="main"></main>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+<script>
+/* =========================================================
+   SalesGPT.work · Lisa — interactive prototype
+   Demo data only. No email is sent, no AI API is called.
+   ========================================================= */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const uid = () => Math.random().toString(36).slice(2, 9);
+const DAY = 864e5;
+const n0 = x => Math.round(x).toLocaleString("en-US");
+const p1 = (a, b) => b ? Math.round(a / b * 1000) / 10 : 0;
+const cap100 = x => Math.min(100, x);
+const fmtDate = t => new Date(t).toLocaleDateString("en-US", {month:"short", day:"numeric"});
+const fmtAgo = t => { const d = Date.now() - t; if (d < 6e4) return "just now"; if (d < 36e5) return Math.round(d/6e4) + "m ago"; if (d < DAY) return Math.round(d/36e5) + "h ago"; if (d < 7*DAY) return Math.round(d/DAY) + "d ago"; return fmtDate(t); };
+function toast(msg){ const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(t._h); t._h = setTimeout(() => t.hidden = true, 2600); }
+function rng(seed){ return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+// split an integer total across weights so the parts add up exactly
+function allocate(total, weights){
+  const sum = weights.reduce((a, b) => a + b, 0) || 1;
+  const raw = weights.map(w => total * w / sum), out = raw.map(Math.floor);
+  let rest = total - out.reduce((a, b) => a + b, 0);
+  raw.map((r, i) => [r - Math.floor(r), i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if (rest > 0){ out[i]++; rest--; } });
+  return out;
+}
+
+/* ---------- merge variables ---------- */
+// {{first_name}} or {{first_name|there}} — text after | is the fallback when a lead has no value
+function merge(tpl, lead, mark){
+  return String(tpl || "").replace(/\{\{\s*([\w ]+?)\s*(?:\|([^}]*))?\}\}/g, (m, key, fb) => {
+    const v = lead[key.trim().toLowerCase().replace(/\s+/g, "_")];
+    if (v) return mark ? esc(v) : v;
+    if (fb !== undefined) return mark ? esc(fb) : fb;
+    return mark ? `<span class="miss">${esc(m)}</span>` : "";
+  });
+}
+const subjectFor = (steps, k) => (steps[k].subject || "").trim() ? steps[k].subject : "Re: " + steps[0].subject;
+
+/* ---------- constants ---------- */
+const TZS = ["Asia/Kolkata","America/New_York","America/Chicago","America/Los_Angeles","Europe/London","Europe/Berlin","Asia/Singapore","Australia/Sydney"];
+const DAYNAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const PERIODS = [["1","Yesterday"],["7","7 Days"],["14","14 Days"],["28","28 Days"],["60","60 Days"],["90","90 Days"]];
+const PRIORITY = {
+  balanced: ["Balanced", "Splits today's capacity between due follow-ups and new leads."],
+  followups: ["Follow-ups first", "Sends every due follow-up before starting anyone new."],
+  newfirst: ["New leads first", "Starts new leads first, then uses what's left for follow-ups."]
+};
+const CLASSES = ["Interested","Meeting Requested","Question","Not Interested","Out of Office","Unsubscribe","Other"];
+const LEAD_STATUSES = ["Active","Scheduled","Replied","Completed","Meeting Booked"];
+
+/* ---------- demo sequences ---------- */
+const SEQ_FOUNDERS = [
+  {delay:0, subject:"{{first_name}}, outbound at {{company}}", body:"Hi {{first_name}},\n\nMost {{industry|SaaS}} founders I talk to are still stitching outbound together from three tools and a spreadsheet.\n\nSalesGPT puts campaigns, sequences, replies and meetings in one place, and Lisa tells you what to do next each morning.\n\nWorth a 15-minute look this week?\n\nChinmay"},
+  {delay:3, subject:"", body:"Hi {{first_name}},\n\nQuick follow-up. The part founders like most: Lisa flags which replies need you today, so nothing interested slips.\n\nOpen to a short demo?\n\nChinmay"},
+  {delay:4, subject:"How {{company}} could book more meetings", body:"Hi {{first_name}},\n\nOne number that matters: teams on SalesGPT see which sequence step actually books meetings, then double down on it.\n\nHappy to show you with your own campaign data.\n\nChinmay"},
+  {delay:5, subject:"", body:"Hi {{first_name}},\n\nI'll close the loop here. If outbound isn't a focus for {{company}} right now, no problem. Should I check back next quarter?\n\nChinmay"}
+];
+const SEQ_VP = [
+  {delay:0, subject:"{{first_name}}, a design-led take on outbound", body:"Hi {{first_name}},\n\nAs {{job_title|a product leader}} at {{company}}, you care about craft. Most sales tools are the opposite: noisy dashboards nobody reads.\n\nSalesGPT is built to be simple first. Would you be open to a look?\n\nChinmay"},
+  {delay:4, subject:"", body:"Hi {{first_name}},\n\nFollowing up. A 2-minute walkthrough video is ready if that's easier than a call.\n\nChinmay"},
+  {delay:5, subject:"", body:"Hi {{first_name}},\n\nLast note from me. If timing is off, just say so and I'll step back.\n\nChinmay"}
+];
+const SEQ_FIN = [
+  {delay:0, subject:"{{company}}'s GTM stack", body:"Hi {{first_name}},\n\nFintech GTM teams tell us compliance makes outbound slow. SalesGPT keeps sending windows, unsubscribes and inbox limits handled for you.\n\nOpen to 15 minutes?\n\nChinmay"},
+  {delay:3, subject:"", body:"Hi {{first_name}},\n\nBumping this up. Happy to share how other fintech teams set up their sequences.\n\nChinmay"},
+  {delay:5, subject:"", body:"Hi {{first_name}},\n\nClosing the loop. Should I reach out again in Q1?\n\nChinmay"}
+];
+
+/* ---------- seed ---------- */
+function mkCampaign(o){
+  const r = rng(o.seed);
+  const k = o.steps.length;
+  const contacted = o.contacts - o.yet;
+  const activeK = allocate(o.active, o.activeShares);
+  const repliesK = allocate(o.replies, o.replyShares);
+  const meetingsK = allocate(o.meetings, o.replyShares);
+  const completed = Math.max(0, contacted - o.replies - o.active);
+  const byStep = o.steps.map((_, i) => ({active: activeK[i], replied: repliesK[i] - meetingsK[i], meeting: meetingsK[i], completed: i === k - 1 ? completed : 0, scheduled: i === 0 ? o.yet : 0}));
+  // daily history (index = days ago at seed time)
+  const days = 120, w = Array(days).fill(0);
+  for (let d = o.endAgo; d <= o.startAgo; d++){ const dow = new Date(Date.now() - d * DAY).getDay(); w[d] = (dow === 0 || dow === 6 ? .25 : 1) * (0.7 + r() * 0.6) * (1 + (o.startAgo - d) / o.startAgo * 0.4); }
+  const bounced = Math.round(o.sent * (1 - o.delivery / 100));
+  const lag = arr => arr.map((x, i) => w[i] ? x : 0);
+  const series = {sent: allocate(o.sent, w), bounced: allocate(bounced, w), replies: allocate(o.replies, lag(w.map(x => x * (0.8 + r() * 0.4)))), positive: allocate(o.positive, w.map(x => x * (0.6 + r() * 0.8))), meetings: allocate(o.meetings, w.map(x => x * (0.5 + r())))};
+  return {id: o.id, name: o.name, goal: o.goal, description: o.description, status: o.status, contacts: o.contacts, sent: o.sent, delivery: o.delivery,
+    replies: o.replies, positive: o.positive, meetings: o.meetings, steps: o.steps.map(s => ({...s})), byStep, series, inboxes: o.inboxes,
+    priority: o.priority, tz: "America/New_York", localTime: true, start: "09:00", end: "17:00", days: [1,2,3,4,5],
+    afterReply: {continue: false, days: 3}, createdAt: Date.now() - o.startAgo * DAY, leads: o.leads, audience: o.audience};
+}
+const L = (name, company, title, step, status, next, extra = {}) => ({name, first_name: name.split(" ")[0], company, job_title: title, email: (name.split(" ")[0] + "@" + company.toLowerCase().replace(/[^a-z]/g, "") + ".com").toLowerCase(), step, status, next, ...extra});
+function seed(){
+  const campaigns = [
+    mkCampaign({seed: 11, id: "c1", name: "US SaaS Founders — Q4", goal: "Book demos", description: "Seed to Series B SaaS founders in the US.", status: "running",
+      contacts: 4250, sent: 2840, yet: 1410, active: 2310, delivery: 95.8, replies: 522, positive: 196, meetings: 61,
+      activeShares: [.30,.28,.24,.18], replyShares: [.36,.24,.30,.10], steps: SEQ_FOUNDERS, startAgo: 62, endAgo: 0, inboxes: ["i1","i2"], priority: "balanced",
+      audience: {who: "Founders and CEOs at US SaaS companies, 10–200 employees", source: "SalesGPT database"},
+      leads: [L("John Smith","Brightloop","Founder",1,"Active","Step 2 · Oct 2"), L("Sarah Williams","Northbeam","CEO",2,"Active","Step 3 · Oct 1"), L("Mike Chen","Stackwise","Co-founder",3,"Active","Step 4 · Today"),
+        L("David Kumar","Ledgerly","Founder",1,"Scheduled","Step 1 · Today"), L("Lisa Morgan","Cartwheel","CEO",4,"Completed","None"), L("Robert Taylor","Fieldnote","Founder",2,"Replied","Stopped"),
+        L("Emily Park","Pipelane","CEO",3,"Meeting Booked","Stopped"), L("Arjun Rao","Tallyhq","Founder",2,"Active","Step 3 · Oct 3")]}),
+    mkCampaign({seed: 23, id: "c2", name: "VP Product — Design-led SaaS", goal: "Book demos", description: "Product leaders at design-led SaaS teams.", status: "running",
+      contacts: 2180, sent: 1640, yet: 540, active: 1330, delivery: 96.1, replies: 208, positive: 81, meetings: 24,
+      activeShares: [.44,.34,.22], replyShares: [.46,.31,.23], steps: SEQ_VP, startAgo: 45, endAgo: 0, inboxes: ["i2","i3"], priority: "followups",
+      audience: {who: "VP and Head of Product at design-led SaaS companies", source: "CSV upload"},
+      leads: [L("Hannah Lee","Framewise","VP Product",1,"Active","Step 2 · Oct 3"), L("Tom Becker","Canvasly","Head of Product",2,"Active","Step 3 · Today"), L("Priya Nair","Mosaic","VP Product",3,"Completed","None"),
+        L("Chris Doyle","Pixelhaus","VP Product",1,"Scheduled","Step 1 · Today"), L("Nora Kim","Shapeshift","CPO",2,"Replied","Stopped"), L("Ben Ortiz","Layerform","VP Product",1,"Meeting Booked","Stopped")]}),
+    mkCampaign({seed: 37, id: "c3", name: "Fintech GTM Leaders", goal: "Book demos", description: "Sales and GTM leaders at fintech companies.", status: "paused",
+      contacts: 1920, sent: 1210, yet: 710, active: 970, delivery: 94.9, replies: 184, positive: 63, meetings: 19,
+      activeShares: [.42,.35,.23], replyShares: [.52,.28,.20], steps: SEQ_FIN, startAgo: 70, endAgo: 9, inboxes: ["i3","i4"], priority: "newfirst",
+      audience: {who: "CROs, VPs of Sales and GTM leads at fintech companies", source: "CRM import"},
+      leads: [L("Oliver Grant","Paylane","CRO",1,"Active","Paused"), L("Maya Shah","Ledgerline","VP Sales",2,"Active","Paused"), L("Sam Wright","Coinstack","Head of GTM",3,"Completed","None"),
+        L("Isha Kapoor","Remitly Labs","VP Sales",1,"Scheduled","Paused"), L("Leo Martin","Clearfund","CRO",1,"Replied","Stopped")]})
+  ];
+  const H = h => Date.now() - h * 36e5;
+  const T = (o) => ({id: uid(), fav: false, read: true, note: "", meeting: null, userBooked: false, seq: "stopped", ...o});
+  const ours = (c, k, lead, h) => ({who: "us", at: H(h), subject: merge(subjectFor(c.steps, k), lead), text: merge(c.steps[k].body, lead)});
+  const threads = [];
+  const add = (cid, lead, k, cls, reply, hAgo, extra = {}) => {
+    const c = campaigns.find(x => x.id === cid);
+    const lv = {first_name: lead.first_name, company: lead.company, job_title: lead.job_title, industry: "SaaS"};
+    const msgs = []; for (let i = 0; i <= k; i++) msgs.push(ours(c, i, lv, hAgo + (k - i) * 80 + 3));
+    msgs.push({who: "them", at: H(hAgo), text: reply});
+    threads.push(T({name: lead.name, first_name: lead.first_name, title: lead.job_title, company: lead.company, email: lead.email, campaignId: cid, inboxId: c.inboxes[(threads.length) % c.inboxes.length], step: k + 1, cls, messages: msgs, read: hAgo > 20, ...extra}));
+  };
+  const c1 = campaigns[0].leads, c2 = campaigns[1].leads, c3 = campaigns[2].leads;
+  add("c1", c1[5], 1, "Interested", "Hey Chinmay, timing is actually good. We're rebuilding outbound this quarter. What does pricing look like for 3 reps?", 2);
+  add("c1", c1[6], 2, "Meeting Requested", "Let's talk. Does Thursday 11am ET work?", 30, {meeting: {date: "2026-10-01", time: "11:00"}, status: "booked"});
+  add("c1", L("Grace Hall","Orbitly","Founder"), 0, "Interested", "This looks relevant. Can you send a 2-minute video first?", 5);
+  add("c1", L("Kevin Brooks","Loomstack","CEO"), 2, "Question", "Does this work with Outlook inboxes or only Gmail?", 7);
+  add("c1", L("Rachel Adams","Beaconly","Founder"), 1, "Not Interested", "Not a fit for us right now, thanks.", 26);
+  add("c1", L("Mark Ellis","Quanta","Co-founder"), 0, "Out of Office", "I'm out until Oct 6 with limited access to email.", 12);
+  add("c1", L("Zoe Turner","Brightdesk","CEO"), 3, "Unsubscribe", "Please remove me from your list.", 40);
+  add("c2", c2[4], 1, "Interested", "Hi Chinmay, the design-led angle got my attention. Can we do 20 minutes next week?", 3);
+  add("c2", c2[5], 0, "Meeting Requested", "Sure, send me an invite for Friday.", 50, {meeting: {date: "2026-10-02", time: "15:30"}, status: "booked"});
+  add("c2", L("Ava Collins","Tessellate","Head of Product"), 1, "Question", "How is this different from Apollo or Instantly?", 18);
+  add("c2", L("Ian Foster","Gridline","VP Product"), 2, "Other", "Forwarding to our Head of Sales, Dana.", 60);
+  add("c3", c3[4], 0, "Interested", "Interesting. We're evaluating tools in November. Circle back then?", 72);
+  add("c3", L("Tara Singh","Finloop","VP Sales"), 1, "Not Interested", "We're locked into a contract for another year.", 96);
+  // a couple of conversations where you already answered
+  [0, 7].forEach(i => { const t = threads[i]; if (i === 7) t.messages.push({who: "us", at: H(1), text: "Hi Nora, great to hear. Here's my calendar: any 20-minute slot next week works."}); });
+  threads.forEach(t => { if (t.cls === "Meeting Requested" && t.meeting) t.status = "booked"; if (!t.read) t.cls = ""; });
+  return {
+    v: 1, seededAt: Date.now(), period: "28",
+    workspace: {name: "SalesGPT.work", tz: "Asia/Kolkata", user: "Chinmay"},
+    settings: {tz: "America/New_York", localTime: true, start: "09:00", end: "17:00", days: [1,2,3,4,5], priority: "balanced",
+      stopReply: true, stopBounce: true, notifyReplies: true, notifyPaused: true, compliance: true},
+    inboxes: [
+      {id: "i1", email: "chinmay@salesgpt.work", provider: "Google Workspace", limit: 50, status: "Healthy"},
+      {id: "i2", email: "c.mehta@trysalesgpt.com", provider: "Google Workspace", limit: 40, status: "Healthy"},
+      {id: "i3", email: "team@getsalesgpt.com", provider: "Microsoft 365", limit: 40, status: "Healthy"},
+      {id: "i4", email: "hello@salesgptmail.com", provider: "Microsoft 365", limit: 25, status: "Warming up"}
+    ],
+    campaigns, threads,
+    notes: [
+      {id: uid(), at: Date.now() - 2 * 36e5, type: "reply", text: "New reply from Robert Taylor · US SaaS Founders — Q4", link: {view: "inbox", thread: threads[0].id}, read: false},
+      {id: uid(), at: Date.now() - 30 * 36e5, type: "meeting", text: "Meeting booked with Emily Park · Oct 1 at 11:00", link: {view: "inbox", thread: threads[1].id}, read: true},
+      {id: uid(), at: Date.now() - 9 * DAY, type: "paused", text: "Fintech GTM Leaders was paused", link: {view: "campaigns", campaign: "c3"}, read: true}
+    ]
+  };
+}
+
+/* ---------- state ---------- */
+const KEY = "salesgpt_lisa_v4";
+let S;
+try { S = JSON.parse(localStorage.getItem(KEY)); } catch(e) {}
+if (!S || S.v !== 1) S = seed();
+// data saved before the greeting existed has no name yet
+if (!S.workspace.user) S.workspace.user = "Chinmay";
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch(e) {} };
+const UI = {view: (location.hash || "#dashboard").slice(1), campaign: null, thread: null, inboxFilter: "All", search: "",
+  seqF: {campaign: "all", step: "all", status: "all"}, wiz: null, wizStep: 0, lisaAnswer: null};
+
+/* ---------- notifications: one entry for each thing you mark in the app ---------- */
+const NOTE_ICON = {meeting: ["●", "var(--lisa)"], interested: ["●", "var(--good)"], notint: ["●", "var(--muted)"], reply: ["●", "var(--accent)"], paused: ["●", "var(--warn)"], running: ["●", "var(--good)"], campaign: ["●", "var(--accent)"], info: ["●", "var(--muted)"]};
+function notify(type, text, link){
+  if (type === "reply" && !S.settings.notifyReplies) return;
+  if (type === "paused" && !S.settings.notifyPaused) return;
+  S.notes = S.notes || []; S.notes.unshift({id: uid(), at: Date.now(), type, text, link: link || null, read: false});
+  S.notes = S.notes.slice(0, 60);
+}
+
+/* ---------- derived numbers ---------- */
+const campaignById = id => S.campaigns.find(c => c.id === id);
+const inboxById = id => S.inboxes.find(i => i.id === id);
+const offsetDays = () => Math.floor((Date.now() - S.seededAt) / DAY);
+function sumSeries(c, key, period){
+  const off = offsetDays(), arr = c.series[key]; let s = 0;
+  const lo = period === "1" ? 1 : 0, hi = period === "1" ? 1 : +period - 1;
+  arr.forEach((v, i) => { const ago = i + off; if (ago >= lo && ago <= hi) s += v; });
+  return s;
+}
+function leadCounts(c){
+  const t = {active: 0, replied: 0, meeting: 0, completed: 0, scheduled: 0};
+  c.byStep.forEach(b => Object.keys(t).forEach(k => t[k] += b[k]));
+  return t;
+}
+function cStats(c){
+  const lc = leadCounts(c);
+  const yet = lc.scheduled, contacted = c.contacts - yet;
+  return {contacts: c.contacts, sent: c.sent, active: lc.active, yet, contacted, completion: cap100(p1(contacted, c.contacts)),
+    delivery: c.delivery, replies: c.replies, replyRate: p1(c.replies, c.sent), positive: c.positive, meetings: c.meetings, delivery: c.sent ? c.delivery : null};
+}
+// meetings you mark in the Inbox add to the demo totals
+// Inbox actions change the real counts (today's numbers), so Dashboard, Campaigns and Analytics always agree
+const isPositive = t => isInterested(t) || t.status === "booked";
+function syncCounts(t, before){
+  const c = campaignById(t.campaignId); if (!c) return;
+  const dPos = isPositive(t) - before.pos, dMeet = (t.status === "booked") - before.booked;
+  const bump = (key, d) => { if (!d) return; c[key] = Math.max(0, c[key] + d); c.series[key][0] = (c.series[key][0] || 0) + d; };
+  bump("positive", dPos); bump("meetings", dMeet);
+  const bs = c.byStep[Math.min(c.byStep.length, t.step) - 1];
+  if (bs && dMeet){ if (dMeet > 0 && bs.replied > 0){ bs.replied--; bs.meeting++; } if (dMeet < 0 && bs.meeting > 0){ bs.meeting--; bs.replied++; } }
+}
+const snap = t => ({pos: isPositive(t), booked: t.status === "booked"});
+function periodKpis(period, list = S.campaigns){
+  let sent = 0, bounced = 0, replies = 0, positive = 0, meetings = 0, contacts = 0, contacted = 0;
+  list.forEach(c => { sent += sumSeries(c, "sent", period); bounced += sumSeries(c, "bounced", period); replies += sumSeries(c, "replies", period);
+    positive += sumSeries(c, "positive", period); meetings += sumSeries(c, "meetings", period); const st = cStats(c); contacts += st.contacts; contacted += st.contacted; });
+  return {sent, delivered: sent - bounced, bounced, delivery: p1(sent - bounced, sent), replies, replyRate: p1(replies, sent), positive, positiveRate: p1(positive, replies), meetings, contacts, contacted, completion: cap100(p1(contacted, contacts))};
+}
+function stepPerf(c){
+  return c.steps.map((_, k) => {
+    const sent = c.byStep.slice(k).reduce((a, b) => a + b.active + b.replied + b.meeting + b.completed, 0);
+    const replies = c.byStep[k].replied + c.byStep[k].meeting;
+    return {step: k + 1, sent, replies, rate: p1(replies, sent)};
+  });
+}
+// how many inbox slots each running campaign gets today (shared inboxes are split between running campaigns)
+function capacityFor(c){
+  return c.inboxes.reduce((a, id) => { const ib = inboxById(id); if (!ib) return a; const sharing = S.campaigns.filter(x => x.status === "running" && x.inboxes.includes(id)).length || 1; return a + ib.limit / sharing; }, 0);
+}
+function todaysQueue(c){
+  const cap = Math.floor(capacityFor(c));
+  const due = Math.round(c.byStep.slice(0, -1).reduce((a, b) => a + b.active, 0) * 0.035) + 3;
+  const yet = cStats(c).yet;
+  let fu = 0, nw = 0;
+  if (c.priority === "followups"){ fu = Math.min(due, cap); nw = Math.min(yet, cap - fu); }
+  else if (c.priority === "newfirst"){ nw = Math.min(yet, cap); fu = Math.min(due, cap - nw); }
+  else { fu = Math.min(due, Math.ceil(cap / 2)); nw = Math.min(yet, cap - fu); fu = Math.min(due, cap - nw); }
+  return {cap, due, fu, nw, left: Math.max(0, due - fu), idle: Math.max(0, cap - fu - nw)};
+}
+const threadState = t => {
+  if (t.cls === "Unsubscribe") return ["Unsubscribed", "p-bad"];
+  if (t.status === "booked") return ["Meeting Booked", "p-good"];
+  if (t.cls === "Not Interested") return ["Not Interested", "p-mute"];
+  if (t.messages[t.messages.length - 1].who === "us") return ["You replied", "p-info"];
+  return ["Needs reply", "p-warn"];
+};
+const needsReply = t => t.messages[t.messages.length - 1].who === "them" && !["Unsubscribe","Not Interested","Out of Office"].includes(t.cls) && t.status !== "booked";
+const isInterested = t => ["Interested","Meeting Requested"].includes(t.cls);
+</script>
+<script>
+/* ---------- shared bits ---------- */
+const PAGES = [["dashboard","Dashboard"],["campaigns","Campaigns"],["create","Create Campaign"],["inbox","Inbox"],["analytics","Analytics"],["accounts","Email Accounts"],["settings","Settings"]];
+function renderNav(){
+  const waiting = S.threads.filter(t => !t.read).length;
+  $("#nav").innerHTML = `<div class="brand">SalesGPT<small><i></i>Lisa is watching ${S.campaigns.filter(c => c.status === "running").length} campaigns</small></div>` +
+    PAGES.map(([k, t]) => `<button data-go="${k}" ${UI.view === k ? 'aria-current="page"' : ""}>${t}${k === "inbox" && waiting ? `<span class="count" title="${waiting} unread">${waiting}</span>` : ""}</button>`).join("") +
+    `<div class="rail-foot">Prototype · demo data.<br>No real emails are sent.</div>`;
+}
+function setHash(v){ try { history.replaceState(null, "", "#" + v); } catch(e) {} }
+function go(v, opts = {}){ UI.seqEdit = null; UI.setEdit = null; UI.menu = null; UI.view = v; UI.campaign = null; Object.assign(UI, opts); setHash(v); render(); $("#main").scrollTop = 0; }
+const bell = () => { const n = (S.notes || []).filter(x => !x.read).length; return `<button class="bell" id="bell" aria-label="Notifications${n ? ", " + n + " unread" : ""}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="bell-label">Notifications</span>${n ? `<span class="count">${n}</span>` : ""}</button>`; };
+const head = (t, s, right = "") => `<div class="head"><div><h1>${t}</h1><p class="sub">${s}</p></div><div class="row">${right}${bell()}</div></div>`;
+document.addEventListener("keydown", e => { if (e.key === "Escape" && UI.notesOpen){ UI.notesOpen = false; render(); } });
+function notesDrawer(){
+  const list = S.notes || [];
+  return `<div class="scrim" id="scrim"></div><aside class="drawer" role="dialog" aria-label="Notifications">
+    <div class="row between" style="padding:16px 16px 10px"><h2 style="margin:0">Notifications</h2><div class="row"><button class="linkbtn" id="notes-read" style="font-size:13px" ${list.some(x => !x.read) ? "" : "disabled"}>Mark all as read</button><button class="btn ghost small" id="notes-close" aria-label="Close">✕</button></div></div>
+    <div style="overflow:auto;flex:1">${list.length ? list.map(nt => `<button class="ntf ${nt.read ? "" : "unread"}" data-note="${nt.id}"><i style="background:${(NOTE_ICON[nt.type] || NOTE_ICON.info)[1]}"></i><span><span class="t">${esc(nt.text)}</span><time>${fmtAgo(nt.at)}</time></span></button>`).join("") : `<p class="muted" style="padding:0 16px">Nothing yet. Actions like booking a meeting or pausing a campaign show up here.</p>`}</div>
+  </aside>`;
+}
+document.addEventListener("click", e => {
+  if (e.target.closest("#bell") || e.target.closest("#nav-notes")){ UI.notesOpen = !UI.notesOpen; render(); return; }
+  if (!UI.notesOpen) return;
+  if (e.target.closest("#notes-close") || e.target.id === "scrim"){ UI.notesOpen = false; render(); return; }
+  if (e.target.closest("#notes-read")){ S.notes.forEach(x => x.read = true); save(); render(); return; }
+  const n = e.target.closest("[data-note]"); if (n){ const nt = S.notes.find(x => x.id === n.dataset.note); nt.read = true; save(); UI.notesOpen = false;
+    const l = nt.link; if (!l) return render();
+    if (l.view === "inbox" && S.threads.some(t => t.id === l.thread)) go("inbox", {thread: l.thread, inboxFilter: "All"});
+    else if (l.view === "campaigns" && campaignById(l.campaign)) go("campaigns", {campaign: l.campaign});
+    else { render(); toast("That item no longer exists"); } }
+});
+const plural = (n, one, many) => `${n0(n)} ${n === 1 ? one : (many || one + "s")}`;
+const pill = (text, cls) => `<span class="pill ${cls}">${esc(text)}</span>`;
+const statusPill = c => c.status === "running" ? pill("Running", "p-good") : c.status === "paused" ? pill("Paused", "p-warn") : pill("Completed", "p-info");
+const onOff = c => `<label class="row" style="flex-wrap:nowrap;gap:8px;margin:0;font-weight:600;font-size:13px;cursor:pointer">${toggle(c)}<span style="color:${c.status === "running" ? "var(--good)" : c.status === "paused" ? "var(--warn)" : "var(--muted)"};min-width:64px">${c.status === "running" ? "Running" : c.status === "paused" ? "Paused" : "Completed"}</span></label>`;
+const toggle = c => `<button class="switch" role="switch" aria-checked="${c.status === "running"}" data-toggle="${c.id}" aria-label="${c.status === "running" ? "Pause" : "Run"} ${esc(c.name)}" ${c.status === "completed" ? "disabled" : ""}></button>`;
+const periodSeg = () => `<div class="seg" role="group" aria-label="Reporting period">${PERIODS.map(([k, t]) => `<button data-period="${k}" aria-pressed="${S.period === k}">${t}</button>`).join("")}</div>`;
+const periodLabel = () => PERIODS.find(p => p[0] === S.period)[1].replace("Days", "days").replace(/^(\d)/, "last $1").replace("Yesterday", "yesterday");
+const leadPill = s => pill(s, {Active: "p-info", Scheduled: "p-mute", Replied: "p-good", Completed: "p-mute", "Meeting Booked": "p-lisa"}[s] || "p-mute");
+const lisaCard = (title, sub, body) => `<section class="lisa-card"><div class="lisa-head"><div class="avatar" aria-hidden="true">L</div><div><b>${title}</b>${sub ? `<br><span>${sub}</span>` : ""}</div></div>${body}</section>`;
+const qa = (a, b, c) => `<div class="qa"><div><div class="q">What happened</div><div class="a">${a}</div></div><div><div class="q">What it means</div><div class="a">${b}</div></div><div><div class="q">What to do</div><div class="a">${c}</div></div></div>`;
+
+/* ---------- Lisa (rule-based in this prototype) ---------- */
+function lisaTodo(){
+  const waiting = S.threads.filter(t => needsReply(t) && isInterested(t));
+  const paused = S.campaigns.filter(c => c.status === "paused").sort((a, b) => cStats(b).yet - cStats(a).yet)[0];
+  if (waiting.length) return `<b>${waiting.length} interested ${waiting.length === 1 ? "reply is" : "replies are"} waiting</b> for you. <button class="linkbtn" data-go="inbox" data-filter="No Reply">Open Inbox</button>`;
+  if (paused) return `<b>${esc(paused.name)}</b> is paused with ${n0(cStats(paused).yet)} leads never contacted. Turn it on to keep momentum.`;
+  const big = [...S.campaigns].sort((a, b) => cStats(b).yet - cStats(a).yet)[0];
+  return big ? `${n0(cStats(big).yet)} leads in <b>${esc(big.name)}</b> are still waiting for a first email.` : "Create your first campaign to get started.";
+}
+function bestStep(){
+  let best = null;
+  S.campaigns.forEach(c => stepPerf(c).forEach(s => { if (s.sent > 100 && (!best || s.rate > best.rate)) best = {...s, c}; }));
+  return best;
+}
+function askLisa(q){
+  q = q.toLowerCase();
+  const running = S.campaigns.filter(c => c.status !== "completed");
+  if (/left|remain|complete|progress|how much/.test(q)){
+    if (!running.length) return "You don't have any campaigns in progress.";
+    return running.map(c => { const s = cStats(c); return `<b>${esc(c.name)}</b> is ${Math.round(s.completion)}% complete. ${n0(s.yet)} contacts have not been contacted yet.`; }).join("<br>");
+  }
+  if (/step|sequence|which email/.test(q)){
+    const b = bestStep(); if (!b) return "Not enough sends yet to compare steps.";
+    return `Step ${b.step} of <b>${esc(b.c.name)}</b> is generating the highest reply rate: ${b.rate}% (${n0(b.replies)} replies from ${n0(b.sent)} sent). Consider reusing its angle in your other sequences.`;
+  }
+  if (/attention|who|inbox|waiting|respond|reply/.test(q)){
+    const w = S.threads.filter(needsReply), hot = w.filter(isInterested);
+    if (!w.length) return "Nobody is waiting on you. Your inbox is clear.";
+    return `${hot.length} interested ${hot.length === 1 ? "reply is" : "replies are"} waiting for a response${hot.length ? ": " + hot.map(t => `<b>${esc(t.name)}</b> (${esc(t.company)})`).join(", ") : ""}. ${w.length - hot.length ? `${w.length - hot.length} more need an answer to a question or other reply.` : ""}`;
+  }
+  if (/send|follow|new lead|priority|capacity/.test(q)){
+    const r = S.campaigns.filter(c => c.status === "running");
+    if (!r.length) return "No campaigns are running, so nothing will send today.";
+    return r.map(c => { const t = todaysQueue(c); return `<b>${esc(c.name)}</b> (${PRIORITY[c.priority][0]}): ${t.fu} follow-ups and ${t.nw} new leads today from ${t.cap} slots.${t.left ? ` ${t.left} due follow-ups wait until tomorrow.` : ""}`; }).join("<br>");
+  }
+  if (/meeting|booked/.test(q)){
+    const k = periodKpis(S.period); return `${k.meetings} meetings booked in the ${periodLabel()}, from ${n0(k.replies)} replies.`;
+  }
+  return "I can answer questions about campaign progress, which sequence step works, who needs a reply, and what sends today. Try one of the suggestions.";
+}
+const SUGGEST = ["How much of my campaign is left?", "Which step is getting replies?", "Who needs my attention?", "Should I send new leads or follow-ups?"];
+function askBox(){
+  return `<div class="chips" style="margin-top:14px">${SUGGEST.map(s => `<button class="chip" data-ask="${esc(s)}">${esc(s)}</button>`).join("")}</div>
+  <form class="row" id="askform" style="margin-top:10px;flex-wrap:nowrap"><input id="askq" placeholder="Ask Lisa about your campaigns" autocomplete="off" aria-label="Ask Lisa"><button class="btn lisa" type="submit">Ask</button></form>
+  ${UI.lisaAnswer ? `<div class="answer"><div class="hint" style="margin-bottom:4px">${esc(UI.lisaAnswer.q)}</div>${UI.lisaAnswer.a}</div>` : ""}`;
+}
+
+/* ---------- Lisa's smart suggestions: each one is a next step with a button that does it ---------- */
+// suggestions stay on Lisa's core job: getting emails sent, delivered and answered
+function buildSuggestions(){
+  const out = [];
+  const waiting = S.threads.filter(needsReply).length;
+  if (waiting) out.push({id: "replies", tone: "var(--good)", tag: "Replies",
+    text: `${plural(waiting, "email reply is", "email replies are")} waiting for your answer. Quick replies convert best.`, btn: "Open Inbox", act: "inbox"});
+  S.campaigns.filter(c => c.status === "running").forEach(c => { const q = todaysQueue(c); if (q.left > 0 && c.priority !== "followups")
+    out.push({id: "queue-" + c.id, tone: "var(--warn)", tag: "Follow-ups",
+      text: `${n0(q.left)} follow-up emails in <b>${esc(c.name)}</b> won't fit in today's sending. Follow-ups usually get more replies than first emails.`, btn: "Send follow-ups first", act: "followups", arg: c.id}); });
+  let weak = null; S.campaigns.forEach(c => stepPerf(c).forEach(st => { if (st.sent > 200 && (!weak || st.rate < weak.rate)) weak = {...st, c}; }));
+  const avg = p1(S.campaigns.reduce((a, c) => a + c.replies, 0), S.campaigns.reduce((a, c) => a + c.sent, 0));
+  if (weak && weak.rate < avg * .6) out.push({id: "weak-" + weak.c.id + weak.step, tone: "var(--accent)", tag: "Email copy",
+    text: `Step ${weak.step} of <b>${esc(weak.c.name)}</b> gets only ${weak.rate}% replies vs your ${avg}% average. Try a shorter email or a new subject line.`, btn: "Edit this email", act: "editseq", arg: weak.c.id});
+  const b = bestStep(); if (b && b.rate > avg) out.push({id: "step-" + b.c.id + b.step, tone: "var(--lisa)", tag: "What's working",
+    text: `Step ${b.step} of <b>${esc(b.c.name)}</b> gets ${b.rate}% replies. Reuse its angle in your other emails.`, btn: "See the email", act: "sequence", arg: b.c.id});
+  S.campaigns.filter(c => c.status === "paused" && cStats(c).yet > 0).sort((a, b) => cStats(b).yet - cStats(a).yet).slice(0, 1).forEach(c =>
+    out.push({id: "paused-" + c.id, tone: "var(--warn)", tag: "Sending",
+      text: `<b>${esc(c.name)}</b> is paused, so ${n0(cStats(c).yet)} leads haven't received their first email.`, btn: "Resume sending", act: "resume", arg: c.id}));
+  S.campaigns.filter(c => c.status === "running").forEach(c => { const yet = cStats(c).yet, cap = Math.floor(capacityFor(c)); const days = cap ? Math.ceil(yet / cap) : 0;
+    if (days > 20) out.push({id: "slow-" + c.id, tone: "var(--accent)", tag: "Sending",
+      text: `At ${cap} emails a day, first emails to the remaining ${n0(yet)} leads in <b>${esc(c.name)}</b> take about ${days} days. Another inbox would speed this up.`, btn: "Add an inbox", act: "accounts"}); });
+  return out.filter(x => !(UI.dismissed || []).includes(x.id));
+}
+function smartSuggestions(){
+  const list = buildSuggestions(), show = list.slice(0, 3);
+  return `<section class="panel sugpanel"><div class="lisa-head" style="margin-bottom:8px"><div class="avatar" aria-hidden="true">L</div><div><b>Lisa suggests</b><br><span>${show.length ? `${list.length} ways to get more from your emails` : "You're all caught up"}</span></div></div>
+    ${show.length ? show.map(x => `<div class="sug"><div class="row between" style="flex-wrap:nowrap"><span class="sug-tag" style="--c:${x.tone}">${x.tag}</span><button class="kebab" style="font-size:13px;width:24px;height:24px" data-dismiss="${x.id}" aria-label="Dismiss suggestion">✕</button></div>
+      <div class="sug-text">${x.text}</div><button class="linkbtn" style="font-size:13px" data-sug="${x.act}" data-arg="${x.arg || ""}">${x.btn} →</button></div>`).join("")
+      : `<p class="muted" style="margin:0">Your emails are on track. New suggestions appear as campaigns send and replies come in.</p>`}</section>`;
+}
+document.addEventListener("click", e => {
+  const d = e.target.closest("[data-dismiss]"); if (d){ UI.dismissed = [...(UI.dismissed || []), d.dataset.dismiss]; render(); return; }
+  const s = e.target.closest("[data-sug]"); if (!s) return;
+  const arg = s.dataset.arg, c = campaignById(arg);
+  if (s.dataset.sug === "thread") go("inbox", {thread: arg, inboxFilter: "All"});
+  if (s.dataset.sug === "unread") go("inbox", {inboxFilter: "Unread", thread: null});
+  if (s.dataset.sug === "resume" && c){ c.status = "running"; notify("running", `${c.name} is running again`, {view: "campaigns", campaign: c.id}); save(); render(); toast(`${c.name} resumed`); }
+  if (s.dataset.sug === "followups" && c){ c.priority = "followups"; notify("campaign", `${c.name} now sends follow-ups first`, {view: "campaigns", campaign: c.id}); save(); render(); toast("Sending priority: Follow-ups first"); }
+  if (s.dataset.sug === "sequence" && c) go("campaigns", {campaign: c.id});
+  if (s.dataset.sug === "inbox") go("inbox", {inboxFilter: "No Reply", thread: null});
+  if (s.dataset.sug === "accounts") go("accounts");
+  if (s.dataset.sug === "editseq" && c){ go("campaigns", {campaign: c.id, seqEdit: {cid: c.id, steps: c.steps.map((x, i) => ({...x, orig: i}))}}); $("#se-s0")?.scrollIntoView({block: "center"}); }
+});
+
+/* ---------- personal greeting ---------- */
+function greeting(){
+  const h = new Date().getHours(), name = esc((S.workspace.user || "there").split(" ")[0]);
+  const part = h < 5 ? "Burning the midnight oil" : h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : h < 21 ? "Good evening" : "Late one tonight";
+  return `${part}, ${name}`;
+}
+function greetLine(){
+  const hot = S.threads.filter(t => needsReply(t) && isInterested(t)).length;
+  const waiting = S.threads.filter(needsReply).length;
+  const k = periodKpis("1");
+  const meet = S.threads.filter(t => t.status === "booked" && t.meeting && t.meeting.date >= new Date().toISOString().slice(0, 10)).length;
+  if (hot) return `${plural(hot, "warm lead is", "warm leads are")} waiting on you. Let's not keep them waiting.`;
+  if (meet) return `You have ${plural(meet, "meeting")} coming up. Lisa sent ${n0(k.sent)} emails for you yesterday.`;
+  if (waiting) return `${plural(waiting, "reply", "replies")} to go through. Lisa sent ${n0(k.sent)} emails for you yesterday.`;
+  return `Inbox is clear. Lisa sent ${n0(k.sent)} emails for you yesterday.`;
+}
+
+/* ---------- Dashboard (kept deliberately short: 6 numbers, 1 chart, who needs you, campaigns) ---------- */
+function dashboard(){
+  const k = periodKpis(S.period), pLabel = periodLabel().replace(/^./, c => c.toUpperCase());
+  const nDays = S.period === "1" ? 7 : +S.period, off = offsetDays();
+  const counts = Array.from({length: nDays}, (_, i) => { const ago = nDays - 1 - i; return S.campaigns.reduce((a, c) => a + (c.series.sent[ago - off] || 0), 0); });
+  const max = Math.max(10, ...counts), nice = Math.ceil(max / 10) * 10;
+  const W = 600, H = 170, pl = 34, pb = 22, bw = (W - pl - 18) / nDays, every = Math.ceil(nDays / 6);
+  const bars = counts.map((v, i) => { const ago = nDays - 1 - i, h = v / nice * (H - pb - 8), hl = S.period === "1" ? ago === 1 : true;
+    return `<rect x="${pl + i * bw + bw * .15}" y="${H - pb - h}" width="${Math.max(1, bw * .7)}" height="${h}" rx="2" fill="var(--accent)" opacity="${hl ? 1 : .3}"><title>${fmtDate(Date.now() - ago * DAY)}: ${v} sent</title></rect>` +
+    ((nDays - 1 - i) % every === 0 ? `<text x="${pl + i * bw + bw / 2}" y="${H - 6}" text-anchor="middle">${fmtDate(Date.now() - ago * DAY)}</text>` : ""); }).join("");
+  const grid = [0, 1].map(f => { const y = H - pb - f * (H - pb - 8); return `<line x1="${pl}" x2="${W}" y1="${y}" y2="${y}" stroke="var(--line)"/><text x="${pl - 6}" y="${y + 3}" text-anchor="end">${Math.round(nice * f)}</text>`; }).join("");
+  const waiting = S.threads.filter(needsReply).sort((a, b) => b.messages.at(-1).at - a.messages.at(-1).at);
+  return head(greeting(), greetLine(), periodSeg()) + `
+  <div class="grid kpis">
+    ${kpi("Emails Sent", n0(k.sent), `${pLabel} · all campaigns`)}
+    ${kpi("Delivery Rate", k.delivery + "%", `${n0(k.delivered)} of ${n0(k.sent)} emails delivered`)}
+    ${kpi("Reply Rate", k.replyRate + "%", `${n0(k.replies)} replies ÷ ${n0(k.sent)} sent`)}
+    ${kpi("Positive Replies", n0(k.positive), "Replies tagged Interested or Meeting")}
+    ${kpi("Meetings Booked", n0(k.meetings), "Marked Meeting Booked in Inbox")}
+    ${kpi("Completion", Math.round(k.completion) + "%", `${n0(k.contacted)} of ${n0(k.contacts)} contacts reached · all time`, k.completion)}
+  </div>
+  <div class="grid two mt" style="align-items:start">
+    <div class="panel"><h2>Emails sent per day</h2><div class="tbl"><svg viewBox="0 0 ${W} ${H}" width="100%" style="min-width:420px" role="img" aria-label="Emails sent per day">${grid}${bars}</svg></div></div>
+    ${smartSuggestions()}
+  </div>
+  <div class="panel mt"><div class="row between" style="margin-bottom:6px"><h2 style="margin:0">Campaigns</h2><button class="linkbtn" data-go="campaigns">See all details</button></div>${miniCampTable(S.campaigns)}</div>`;
+}
+function miniCampTable(list){
+  if (!list.length) return `<p class="muted">No campaigns yet. <button class="btn small" data-go="create">Create your first campaign</button></p>`;
+  return `<div class="tbl"><table><thead><tr><th>Status</th><th>Campaign</th><th>Completion</th><th class="num">Sent</th><th class="num">Reply rate</th><th class="num">Meetings</th></tr></thead><tbody>` +
+  list.map(c => { const s = cStats(c); return `<tr><td>${onOff(c)}</td><td><button class="cname" data-camp="${c.id}">${esc(c.name)}</button></td>
+    <td><div class="row" style="flex-wrap:nowrap;gap:8px"><div class="bar" style="width:90px"><i style="width:${s.completion}%"></i></div><span class="num">${Math.round(s.completion)}%</span></div></td>
+    <td class="num">${n0(s.sent)}</td><td class="num">${s.sent ? s.replyRate + "%" : "—"}</td><td class="num">${n0(s.meetings)}</td></tr>`; }).join("") + `</tbody></table></div>`;
+}
+const kpi = (label, val, note, barPct, color) => `<div class="panel kpi"><div class="label">${label}</div><div class="val">${val}</div>${note ? `<div class="note">${note}</div>` : ""}${barPct != null ? `<div class="bar"><i style="width:${cap100(barPct)}%;${color ? "background:" + color : ""}"></i></div>` : ""}</div>`;
+function campTable(list){
+  if (!list.length) return `<p class="muted">No campaigns yet. <button class="btn small" data-go="create">Create your first campaign</button></p>`;
+  return `<div class="tbl"><table><thead><tr><th>Status</th><th>Campaign</th><th>Completion</th><th class="num">Contacts</th><th class="num">Sent</th><th class="num">Active</th><th class="num">Yet to contact</th><th class="num">Reply rate</th><th><span class="sr">Options</span></th></tr></thead><tbody>` +
+  list.map(c => { const s = cStats(c); return `<tr>
+    <td>${onOff(c)}</td>
+    <td><button class="cname" data-camp="${c.id}">${esc(c.name)}</button></td>
+    <td><div class="row" style="flex-wrap:nowrap;gap:8px"><div class="bar" style="width:70px"><i style="width:${s.completion}%"></i></div><span class="num">${Math.round(s.completion)}%</span></div></td>
+    <td class="num">${n0(s.contacts)}</td><td class="num">${n0(s.sent)}</td><td class="num">${n0(s.active)}</td><td class="num">${n0(s.yet)}</td>
+    <td class="num">${s.sent ? s.replyRate + "%" : "—"}</td><td>${kebab(c)}</td></tr>`; }).join("") + `</tbody></table></div>`;
+}
+function threadRow(t){
+  const c = campaignById(t.campaignId), last = t.messages.at(-1);
+  return `<button class="msg ${t.read ? "" : "unread"} ${(UI.thread || UI.shown) === t.id ? "sel" : ""}" data-thread="${t.id}"><div class="who"><span class="n">${esc(t.name)} <span class="muted" style="font-weight:400">· ${esc(t.company)}</span></span><time>${fmtAgo(last.at)}</time></div>
+    <div class="row" style="gap:6px;margin:3px 0">${t.cls ? pill(t.cls, isInterested(t) ? "p-good" : t.cls === "Unsubscribe" ? "p-bad" : "p-mute") : ""}<span class="hint">${esc(c ? c.name : "")} · Step ${t.step}</span></div>
+    <div class="snip">${esc(last.who === "us" ? "You: " + last.text : last.text)}</div></button>`;
+}
+
+/* ---------- Campaign sequence: view + edit ---------- */
+const hlVars = txt => esc(txt).replace(/\{\{[^}]+\}\}/g, m => `<span class="var" style="cursor:default;padding:0 4px">${m}</span>`);
+function sequenceSection(c, perf, topStep, maxRate){
+  const ed = UI.seqEdit && UI.seqEdit.cid === c.id ? UI.seqEdit : null;
+  if (ed) return seqEditor(c, ed, perf);
+  const dayOff = k => c.steps.slice(1, k + 1).reduce((a, x) => a + (+x.delay || 0), 0);
+  return `<div class="panel mt"><div class="row between" style="margin-bottom:12px"><h2 style="margin:0">Sequence</h2>
+    ${c.status === "completed" ? `<span class="hint">Completed campaigns can't be edited</span>` : `<button class="btn ghost small" data-seqedit="${c.id}">Edit sequence</button>`}</div>
+    <div class="grid" style="gap:10px">${c.steps.map((st, k) => `<div class="stepcard">
+      <div class="top"><div style="min-width:0;flex:1"><b>Step ${k + 1}</b> <span class="hint">· Day ${dayOff(k)}${k ? ` · ${st.delay} days after step ${k}, if no reply` : " · first email"}</span>
+        <div class="name" style="max-width:560px;margin-top:2px">${hlVars(subjectFor(c.steps, k))}</div></div>
+      <div style="min-width:200px;flex:1;max-width:320px"><div class="hbar" style="grid-template-columns:minmax(0,1fr) 64px;margin:0"><span class="track"><i style="width:${perf[k].rate / maxRate * 100}%;background:${topStep && topStep.step === k + 1 ? "var(--lisa)" : "var(--accent)"}"></i></span><span class="num">${perf[k].rate}%</span></div><div class="hint">${n0(perf[k].sent)} sent · ${plural(perf[k].replies, "reply", "replies")}${topStep && topStep.step === k + 1 ? " · best step" : ""}</div></div></div>
+      <details><summary class="linkbtn" style="font-size:13px">Show email</summary><div class="preview" style="margin-top:8px"><div class="body">${hlVars(st.body)}</div></div></details>
+    </div>`).join("")}</div></div>`;
+}
+function seqEditor(c, ed, perf){
+  const vars = [...new Set(["first_name","company","job_title","industry", ...Object.keys(c.leads[0] || {}).filter(k => !["name","email","step","status","next"].includes(k))])];
+  return `<div class="panel mt" style="border-color:var(--accent)"><div class="row between" style="margin-bottom:6px"><h2 style="margin:0">Edit sequence</h2>
+      <div class="row"><button class="btn ghost small" data-seqcancel>Cancel</button><button class="btn small" data-seqsave>Save changes</button></div></div>
+    <p class="hint" style="margin:0 0 10px">Changes apply to emails that haven't been sent yet. Leads who already got a step won't get it again.${c.status === "running" ? " The campaign keeps running while you edit." : ""}</p>
+    <div class="chips" style="margin-bottom:12px">${vars.map(v => `<button type="button" class="var" data-seqins="${esc(v)}">{{${esc(v)}}}</button>`).join("")}<span class="hint" style="align-self:center">Click to insert where your cursor is</span></div>
+    <div class="grid" style="gap:10px">${ed.steps.map((st, i) => { const sent = st.orig != null && perf[st.orig] ? perf[st.orig].sent : 0; return `<div class="stepcard">
+      <div class="top"><b>Step ${i + 1}${sent ? ` <span class="hint" style="font-weight:400">· already sent to ${n0(sent)}</span>` : ` <span class="pill p-info">Not sent yet</span>`}</b>
+        <span class="row">${i ? `<span class="delay">Wait <input type="number" min="1" max="30" id="se-d${i}" data-se="${i}.delay" value="${st.delay}" aria-label="Days to wait"> days, if no reply</span>` : `<span class="hint">First email</span>`}
+        ${i && !sent ? `<button type="button" class="linkbtn rm" data-seqrm="${i}">Remove</button>` : ""}</span></div>
+      <div><label for="se-s${i}">Subject ${i ? `<span class="hint">Blank = reply in the same thread</span>` : ""}</label><input id="se-s${i}" data-se="${i}.subject" data-seqmerge value="${esc(st.subject)}" placeholder="${i ? "Re: " + esc(ed.steps[0].subject) : ""}"></div>
+      <div><label for="se-b${i}">Body</label><textarea id="se-b${i}" data-se="${i}.body" data-seqmerge rows="6">${esc(st.body)}</textarea></div></div>`; }).join("")}</div>
+    ${ed.steps.length < 6 ? `<button class="btn ghost mt" type="button" data-seqadd>+ Add email</button>` : ""}
+    <p class="hint" id="seq-err" style="color:var(--bad);margin:8px 0 0"></p></div>`;
+}
+let seqLastField = null;
+document.addEventListener("focusin", e => { if (e.target.hasAttribute && e.target.hasAttribute("data-seqmerge")) seqLastField = e.target.id; });
+document.addEventListener("input", e => { const k = e.target.dataset && e.target.dataset.se; if (!k || !UI.seqEdit) return; const [i, key] = k.split("."); UI.seqEdit.steps[+i][key] = key === "delay" ? Math.max(1, +e.target.value || 1) : e.target.value; });
+document.addEventListener("click", e => {
+  const t = e.target;
+  const ed = t.closest("[data-seqedit]"); if (ed){ const c = campaignById(ed.dataset.seqedit); UI.seqEdit = {cid: c.id, steps: c.steps.map((s, i) => ({...s, orig: i}))}; render(); return; }
+  if (!UI.seqEdit) return;
+  if (t.closest("[data-seqcancel]")){ UI.seqEdit = null; render(); toast("No changes saved"); return; }
+  if (t.closest("[data-seqadd]")){ const n = UI.seqEdit.steps.length; UI.seqEdit.steps.push({delay: 4, subject: "", body: "Hi {{first_name}},\n\n\n\nChinmay", orig: null}); render(); $("#se-b" + n)?.focus(); return; }
+  const rm = t.closest("[data-seqrm]"); if (rm){ UI.seqEdit.steps.splice(+rm.dataset.seqrm, 1); render(); return; }
+  const ins = t.closest("[data-seqins]"); if (ins){ const el = document.getElementById(seqLastField) || $("#se-b0"); if (!el) return; const tok = `{{${ins.dataset.seqins}}}`, a = el.selectionStart ?? el.value.length, b = el.selectionEnd ?? a;
+    el.value = el.value.slice(0, a) + tok + el.value.slice(b); el.focus(); el.setSelectionRange(a + tok.length, a + tok.length); el.dispatchEvent(new Event("input", {bubbles: true})); return; }
+  if (t.closest("[data-seqsave]")){
+    const s = UI.seqEdit.steps, err = $("#seq-err");
+    if (!s[0].subject.trim()) return err.textContent = "Step 1 needs a subject.";
+    const bad = s.findIndex(x => !x.body.trim()); if (bad >= 0) return err.textContent = `Step ${bad + 1} needs a body.`;
+    const c = campaignById(UI.seqEdit.cid), zero = () => ({active: 0, replied: 0, meeting: 0, completed: 0, scheduled: 0});
+    c.byStep = s.map((x, i) => x.orig != null ? c.byStep[x.orig] : zero());
+    c.steps = s.map((x, i) => ({delay: i ? Math.max(1, +x.delay || 1) : 0, subject: x.subject, body: x.body}));
+    notify("campaign", `Sequence updated for ${c.name}`, {view: "campaigns", campaign: c.id}); UI.seqEdit = null; save(); render(); toast("Sequence saved. Changes apply to emails not sent yet."); }
+});
+
+/* ---------- campaign ⋯ menu ---------- */
+const kebab = c => `<button class="kebab" data-menu="${c.id}" aria-label="More options for ${esc(c.name)}" aria-haspopup="menu" aria-expanded="${UI.menu === c.id}">⋯</button>`;
+function menuHTML(c){
+  const del = UI.menuDel === c.id;
+  const items = [["view", "View details"], ["seq", c.status === "completed" ? "" : "Edit sequence"], ["settings", c.status === "completed" ? "" : "Campaign settings"],
+    ["toggle", c.status === "running" ? "Pause campaign" : c.status === "paused" ? "Resume campaign" : ""], ["dup", "Duplicate"], ["delete", del ? "Click again to delete" : "Delete"]].filter(x => x[1]);
+  return `<div class="menu" role="menu">${items.map(([k, t]) => `${k === "delete" ? "<hr>" : ""}<button role="menuitem" data-mact="${k}" data-cid="${c.id}" class="${k === "delete" ? "bad" : ""} ${k === "delete" && del ? "armed" : ""}">${t}</button>`).join("")}</div>`;
+}
+function placeMenu(){
+  const old = $("#menu-layer"); if (old) old.remove();
+  if (!UI.menu) return;
+  const btn = document.querySelector(`[data-menu="${UI.menu}"]`), c = campaignById(UI.menu); if (!btn || !c){ UI.menu = null; return; }
+  const r = btn.getBoundingClientRect(), d = document.createElement("div"); d.id = "menu-layer"; d.innerHTML = menuHTML(c); document.body.appendChild(d);
+  const m = d.firstChild, h = m.offsetHeight, w = m.offsetWidth;
+  m.style.top = (r.bottom + 4 + h > innerHeight ? Math.max(8, r.top - h - 4) : r.bottom + 4) + "px";
+  m.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.right - w)) + "px";
+}
+function duplicate(c){
+  const n = c.contacts, copy = JSON.parse(JSON.stringify(c));
+  Object.assign(copy, {id: uid(), name: c.name + " (copy)", status: "paused", live: true, sent: 0, delivery: 0, replies: 0, positive: 0, meetings: 0, createdAt: Date.now(), ticks: 0,
+    byStep: c.steps.map((_, i) => ({active: 0, replied: 0, meeting: 0, completed: 0, scheduled: i === 0 ? n : 0})),
+    series: {sent: [0], bounced: [0], replies: [0], positive: [0], meetings: [0]},
+    leads: c.leads.map(l => ({...l, step: 1, status: "Scheduled", next: "Step 1 · when resumed"}))});
+  S.campaigns.push(copy); return copy;
+}
+document.addEventListener("click", e => {
+  const k = e.target.closest("[data-menu]");
+  if (k){ const id = k.dataset.menu; UI.menu = UI.menu === id ? null : id; UI.menuDel = null; placeMenu(); $$("[data-menu]").forEach(b => b.setAttribute("aria-expanded", b.dataset.menu === UI.menu)); return; }
+  const a = e.target.closest("[data-mact]");
+  if (!a){ if (UI.menu && !e.target.closest(".menu")){ UI.menu = null; UI.menuDel = null; placeMenu(); } return; }
+  const c = campaignById(a.dataset.cid); if (!c) return;
+  const act = a.dataset.mact;
+  if (act === "delete" && UI.menuDel !== c.id){ UI.menuDel = c.id; placeMenu(); return; }
+  UI.menu = null; UI.menuDel = null; placeMenu();
+  if (act === "view") go("campaigns", {campaign: c.id});
+  if (act === "seq"){ go("campaigns", {campaign: c.id, seqEdit: {cid: c.id, steps: c.steps.map((s, i) => ({...s, orig: i}))}}); $("#se-s0")?.scrollIntoView({block: "center"}); }
+  if (act === "settings"){ go("campaigns", {campaign: c.id, setEdit: {cid: c.id, d: JSON.parse(JSON.stringify({name: c.name, inboxes: c.inboxes, start: c.start, end: c.end, days: c.days, tz: c.tz, localTime: c.localTime, priority: c.priority, afterReply: c.afterReply}))}}); $("#camp-settings")?.scrollIntoView({block: "start"}); }
+  if (act === "toggle"){ c.status = c.status === "running" ? "paused" : "running"; notify(c.status, `${c.name} ${c.status === "running" ? "is running again" : "was paused"}`, {view: "campaigns", campaign: c.id}); save(); render(); toast(`${c.name} is ${c.status}`); }
+  if (act === "dup"){ const cp = duplicate(c); notify("campaign", `${cp.name} created (paused)`, {view: "campaigns", campaign: cp.id}); save(); go("campaigns", {campaign: cp.id}); toast("Duplicated. It starts paused, so turn it on when ready."); }
+  if (act === "delete"){ notify("info", `${c.name} was deleted`); S.campaigns = S.campaigns.filter(x => x.id !== c.id); S.threads = S.threads.filter(t => t.campaignId !== c.id); save(); go("campaigns", {campaign: null}); toast("Campaign deleted"); }
+});
+document.addEventListener("keydown", e => { if (e.key === "Escape" && UI.menu){ UI.menu = null; placeMenu(); } });
+$("#main").addEventListener("scroll", () => { if (UI.menu){ UI.menu = null; UI.menuDel = null; placeMenu(); } });
+
+/* ---------- campaign settings: view + edit ---------- */
+function campSettings(c){
+  const ed = UI.setEdit && UI.setEdit.cid === c.id ? UI.setEdit.d : null;
+  if (!ed) return `<div class="panel mt" id="camp-settings"><div class="row between" style="margin-bottom:12px"><h2 style="margin:0">Campaign settings</h2>${c.status === "completed" ? "" : `<button class="btn ghost small" data-mact="settings" data-cid="${c.id}">Edit settings</button>`}</div><div class="facts">
+    <div><span>Inboxes</span>${c.inboxes.map(id => esc(inboxById(id)?.email || "removed")).join("<br>") || "None"}</div>
+    <div><span>Window</span>${c.start}–${c.end}<br>${c.days.map(d => DAYNAMES[d]).join(", ")}</div>
+    <div><span>Timezone</span>${c.localTime ? "Each lead's local time" : esc(c.tz)}</div>
+    <div><span>Priority</span>${PRIORITY[c.priority][0]}</div>
+    <div><span>After a reply</span>${c.afterReply.continue ? `Continue after ${c.afterReply.days} days` : "Stop the sequence"}</div></div>
+    <p class="hint" style="margin:10px 0 0">Meeting booked or unsubscribe always stops the sequence.</p></div>`;
+  return `<div class="panel mt form" id="camp-settings" style="border-color:var(--accent)"><div class="row between"><h2 style="margin:0">Edit campaign settings</h2><div class="row"><button class="btn ghost small" data-cs="cancel">Cancel</button><button class="btn small" data-cs="save">Save changes</button></div></div>
+    <div style="max-width:480px"><label for="cs-name">Campaign name</label><input id="cs-name" data-csf="name" value="${esc(ed.name)}"></div>
+    <div><label>Sending inboxes</label><div class="chips">${S.inboxes.map(i => `<span class="days"><label style="margin:0"><input type="checkbox" data-csib="${i.id}" ${ed.inboxes.includes(i.id) ? "checked" : ""}>${esc(i.email)} <span class="hint">${i.limit}/day</span></label></span>`).join("")}</div></div>
+    <div class="cols"><div><label for="cs-start">Start time</label><input type="time" id="cs-start" data-csf="start" value="${ed.start}"></div><div><label for="cs-end">Stop time</label><input type="time" id="cs-end" data-csf="end" value="${ed.end}"></div>
+      <div><label for="cs-tz">Timezone</label><select id="cs-tz" data-csf="tz">${TZS.map(t => `<option ${t === ed.tz ? "selected" : ""}>${t}</option>`).join("")}</select></div></div>
+    <label class="row" style="gap:8px;margin:0;font-weight:500"><input type="checkbox" id="cs-local" ${ed.localTime ? "checked" : ""}>Send at each lead's local time</label>
+    <div><label>Sending days</label><div class="days">${[1,2,3,4,5,6,0].map(x => `<label><input type="checkbox" data-csday="${x}" ${ed.days.includes(x) ? "checked" : ""}>${DAYNAMES[x]}</label>`).join("")}</div></div>
+    <div><label>Sending priority</label><div class="seg" role="group" aria-label="Sending priority">${Object.entries(PRIORITY).map(([k, v]) => `<button type="button" data-csprio="${k}" aria-pressed="${ed.priority === k}">${v[0]}</button>`).join("")}</div></div>
+    <div><label>After someone replies</label><div class="seg" role="group" aria-label="After a reply"><button type="button" data-csar="stop" aria-pressed="${!ed.afterReply.continue}">Stop the sequence</button><button type="button" data-csar="continue" aria-pressed="${ed.afterReply.continue}">Continue after a wait</button></div>
+      ${ed.afterReply.continue ? `<div class="delay" style="margin-top:8px">Send the next email after <input type="number" min="1" max="30" id="cs-ardays" value="${ed.afterReply.days}" aria-label="Days after reply"> days</div>` : ""}</div>
+    <p class="hint" id="cs-err" style="color:var(--bad);margin:0"></p></div>`;
+}
+document.addEventListener("input", e => { const ed = UI.setEdit && UI.setEdit.d; if (!ed) return; const t = e.target;
+  if (t.dataset.csf) ed[t.dataset.csf] = t.value; if (t.id === "cs-ardays") ed.afterReply.days = Math.max(1, +t.value || 1); });
+document.addEventListener("change", e => { const ed = UI.setEdit && UI.setEdit.d; if (!ed) return; const t = e.target;
+  if (t.dataset.csib){ ed.inboxes = t.checked ? [...new Set([...ed.inboxes, t.dataset.csib])] : ed.inboxes.filter(x => x !== t.dataset.csib); }
+  if (t.dataset.csday !== undefined){ const x = +t.dataset.csday; ed.days = t.checked ? [...new Set([...ed.days, x])].sort() : ed.days.filter(y => y !== x); }
+  if (t.id === "cs-local") ed.localTime = t.checked; });
+document.addEventListener("click", e => { if (!UI.setEdit) return; const ed = UI.setEdit.d, t = e.target;
+  const p = t.closest("[data-csprio]"); if (p){ ed.priority = p.dataset.csprio; render(); return; }
+  const r = t.closest("[data-csar]"); if (r){ ed.afterReply.continue = r.dataset.csar === "continue"; render(); return; }
+  const b = t.closest("[data-cs]"); if (!b) return;
+  if (b.dataset.cs === "cancel"){ UI.setEdit = null; render(); toast("No changes saved"); return; }
+  const err = m => { $("#cs-err").textContent = m; };
+  if (!ed.name.trim()) return err("Give the campaign a name.");
+  if (!ed.inboxes.length) return err("Choose at least one sending inbox.");
+  if (!ed.days.length) return err("Choose at least one sending day.");
+  if (ed.start >= ed.end) return err("Stop time must be after start time.");
+  const c = campaignById(UI.setEdit.cid); Object.assign(c, {...ed, name: ed.name.trim()});
+  notify("campaign", `Settings updated for ${c.name}`, {view: "campaigns", campaign: c.id});
+  UI.setEdit = null; save(); render(); toast("Campaign settings saved");
+});
+
+/* ---------- Campaigns ---------- */
+let pauseArmed = false;
+document.addEventListener("click", e => {
+  const f = e.target.closest("[data-cfilter]"); if (f){ UI.campFilter = f.dataset.cfilter; render(); return; }
+  const pa = e.target.closest("[data-pauseall]"); if (pa){
+    if (!pauseArmed){ pauseArmed = true; pa.textContent = "Click again to pause all"; pa.classList.add("danger"); pa.style.color = "#fff"; return; }
+    pauseArmed = false; S.campaigns.forEach(c => { if (c.status === "running"){ c.status = "paused"; notify("paused", `${c.name} was paused`, {view: "campaigns", campaign: c.id}); } }); save(); render(); toast("All campaigns paused"); }
+});
+function campaigns(){
+  const c = UI.campaign && campaignById(UI.campaign);
+  if (c) return campaignDetail(c);
+  const f = UI.campFilter || "all", counts = {all: S.campaigns.length, running: S.campaigns.filter(x => x.status === "running").length, paused: S.campaigns.filter(x => x.status === "paused").length};
+  const list = S.campaigns.filter(x => f === "all" || x.status === f);
+  return head("Campaigns", "Use the switch to run or pause a campaign. Click a name for details.", `<button class="btn" data-go="create">New campaign</button>`) +
+    `<div class="row between" style="margin-bottom:12px"><div class="seg" role="group" aria-label="Show campaigns">${[["all","All"],["running","Running"],["paused","Paused"]].map(([k, t]) => `<button data-cfilter="${k}" aria-pressed="${f === k}">${t} <span style="opacity:.7">${counts[k]}</span></button>`).join("")}</div>
+    ${counts.running ? `<button class="btn ghost small" data-pauseall>Pause all</button>` : ""}</div>
+    <div class="panel">${list.length ? campTable(list) : `<p class="muted">No ${f} campaigns.</p>`}</div>`;
+}
+function campaignDetail(c){
+  const s = cStats(c), perf = stepPerf(c), q = todaysQueue(c);
+  const topStep = [...perf].filter(x => x.sent > 50).sort((a, b) => b.rate - a.rate)[0];
+  const dayOff = k => c.steps.slice(1, k + 1).reduce((a, x) => a + (+x.delay || 0), 0);
+  const maxRate = Math.max(5, ...perf.map(x => x.rate));
+  const qTotal = Math.max(1, q.cap);
+  return `<div class="head"><div><button class="btn ghost small" data-back>← All campaigns</button>
+      <h1 style="margin-top:10px">${esc(c.name)}</h1><p class="sub">${statusPill(c)} &nbsp;${esc(c.goal || "")}${c.description ? " · " + esc(c.description) : ""}</p></div>
+    <div class="row">${bell()}<span class="hint">${c.status === "running" ? "Running" : c.status === "paused" ? "Paused" : "Completed"}</span>${toggle(c)}${kebab(c)}</div></div>
+  ${lisaCard("Lisa on this campaign", c.status === "running" ? "Sending on schedule" : c.status === "completed" ? "Every lead has finished the sequence" : "Nothing sends while paused", qa(
+    `${n0(s.sent)} emails sent, ${plural(s.replies, "reply", "replies")} and ${plural(s.meetings, "meeting")} booked.`,
+    `The campaign is ${Math.round(s.completion)}% complete. ${topStep ? `Step ${topStep.step} is your strongest email at ${topStep.rate}% replies.` : ""}`,
+    c.status === "completed" ? `Reply to the ${plural(S.threads.filter(t => t.campaignId === c.id && needsReply(t)).length, "lead")} waiting in the Inbox, then start a new campaign for fresh leads.` : c.status === "paused" ? `Turn it back on. ${n0(s.yet)} contacts haven't heard from you yet.` : `${n0(s.yet)} leads are still waiting to be contacted. Today Lisa plans ${q.fu} follow-ups and ${q.nw} first emails.`))}
+  <div class="grid kpis mt">
+    ${kpi("Contacts", n0(s.contacts), c.audience ? "From " + esc(c.audience.source) : "Campaign audience")}
+    ${kpi("Sent", n0(s.sent), "First emails + follow-ups · all time")}
+    ${kpi("Reply Rate", s.sent ? s.replyRate + "%" : "—", s.sent ? `${n0(s.replies)} replies ÷ ${n0(s.sent)} sent` : "Nothing sent yet")}
+    ${kpi("Completion", Math.round(s.completion) + "%", `${n0(s.contacted)} of ${n0(s.contacts)} contacts reached`, s.completion)}
+    ${kpi("Contacts Remaining", n0(s.yet), "Not emailed yet")}
+    ${kpi("Active Leads", n0(s.active), "Waiting for their next email")}
+  </div>
+  <div class="grid halves mt">
+    <div class="panel"><h2>Sending priority</h2>
+      <div class="seg" role="group" aria-label="Sending priority">${Object.entries(PRIORITY).map(([k, v]) => `<button data-prio="${k}" aria-pressed="${c.priority === k}">${v[0]}</button>`).join("")}</div>
+      <p class="hint" style="margin:10px 0 0">${PRIORITY[c.priority][1]} Lisa always skips anyone who replied, unsubscribed or booked a meeting, and respects sending windows and inbox limits.</p></div>
+    <div class="panel"><h2>Today's queue</h2>
+      ${c.status !== "running" ? `<p class="muted">${c.status === "completed" ? "Campaign completed. Nothing left to send." : "Paused. Nothing will send today."}</p>` : `
+      <div class="queue" role="img" aria-label="${q.fu} follow-ups, ${q.nw} new leads, ${q.idle} unused of ${q.cap}"><i style="width:${q.fu / qTotal * 100}%;background:var(--warn)"></i><i style="width:${q.nw / qTotal * 100}%;background:var(--accent)"></i></div>
+      <div class="legend"><span style="--c:var(--warn)">${q.fu} follow-ups</span><span style="--c:var(--accent)">${q.nw} first emails</span><span style="--c:var(--line)">${q.idle} unused</span></div>
+      <p class="hint" style="margin:8px 0 0">${q.cap} slots today from ${c.inboxes.length} inboxes, ${c.start}–${c.end} ${c.localTime ? "in each lead's local time" : c.tz}. ${q.left ? `${q.left} due follow-ups carry over to tomorrow.` : "Every due follow-up fits today."}</p>`}</div>
+  </div>
+  ${sequenceSection(c, perf, topStep, maxRate)}
+  <div class="panel mt"><div class="row between" style="margin-bottom:8px"><h2 style="margin:0">Lead-level sequence progress</h2><span class="hint">A sample of leads. Each lead moves through the sequence on its own clock.</span></div>
+    <div class="tbl"><table><thead><tr><th>Lead</th><th>Company</th><th>Current step</th><th>Status</th><th>Next action</th></tr></thead><tbody>
+    ${c.leads.map(l => `<tr><td><b>${esc(l.name)}</b><div class="hint">${esc(l.email)}</div></td><td>${esc(l.company)}</td><td>Step ${l.step}</td><td>${leadPill(l.status)}</td><td class="muted">${esc(l.next)}</td></tr>`).join("")}
+    </tbody></table></div>
+    <div class="row mt" style="gap:16px">${["active","scheduled","replied","meeting","completed"].map(k => `<span class="hint"><b style="color:var(--fg)">${n0(leadCounts(c)[k])}</b> ${({active:"active",scheduled:"yet to contact",replied:"replied",meeting:"meeting booked",completed:"completed"})[k]}</span>`).join("")}</div></div>
+  ${campSettings(c)}
+  <div hidden><div class="facts">
+    <div><span>Inboxes</span>${c.inboxes.map(id => esc(inboxById(id)?.email || "removed")).join("<br>")}</div>
+    <div><span>Window</span>${c.start}–${c.end}<br>${c.days.map(d => DAYNAMES[d]).join(", ")}</div>
+    <div><span>Timezone</span>${c.localTime ? "Each lead's local time" : esc(c.tz)}</div>
+    <div><span>After a reply</span>${c.afterReply.continue ? `Continue after ${c.afterReply.days} days` : "Stop the sequence"}<br><span class="hint" style="display:inline;text-transform:none;letter-spacing:0;font-weight:400">Meeting booked or unsubscribe always stops</span></div>
+  </div></div>`;
+}
+</script>
+<script>
+/* ---------- Create Campaign (5-step wizard) ---------- */
+const WIZ = ["Campaign", "Audience", "Write your emails", "Choose how to send", "Review & launch"];
+const BASE_VARS = ["first_name", "company", "job_title", "industry"];
+function newDraft(){
+  const st = S.settings;
+  return {name: "", goal: "Book demos", description: "", who: "", source: "CSV upload", contacts: 500, filters: {industry: "", location: "", size: ""},
+    csv: "", custom: [], newVar: "",
+    ai: {offer: "SalesGPT, one place to run outbound campaigns, sequences and replies", persona: "Heads of Sales at B2B SaaS companies", tone: "Friendly", count: 3, context: "Hiring SDRs and juggling several outreach tools"},
+    steps: [{delay: 0, subject: "{{first_name}}, quick question about {{company}}", body: "Hi {{first_name}},\n\n"}],
+    inboxes: S.inboxes.filter(i => i.status === "Healthy").slice(0, 2).map(i => i.id), limits: Object.fromEntries(S.inboxes.map(i => [i.id, i.limit])),
+    tz: st.tz, localTime: st.localTime, start: st.start, end: st.end, days: [...st.days], priority: st.priority,
+    afterReply: {continue: !S.settings.stopReply, days: 3},
+    sample: {first_name: "Sarah", company: "Northbeam", job_title: "VP Product", industry: "SaaS"}, testEmail: "", pvStep: 0};
+}
+function parseCSV(text){
+  const rows = []; let row = [], cell = "", q = false;
+  for (let i = 0; i < text.length; i++){ const ch = text[i];
+    if (q){ if (ch === '"' && text[i+1] === '"'){ cell += '"'; i++; } else if (ch === '"') q = false; else cell += ch; }
+    else if (ch === '"') q = true; else if (ch === ","){ row.push(cell); cell = ""; }
+    else if (ch === "\n" || ch === "\r"){ if (ch === "\r" && text[i+1] === "\n") i++; row.push(cell); rows.push(row); row = []; cell = ""; } else cell += ch; }
+  if (cell || row.length){ row.push(cell); rows.push(row); }
+  const clean = rows.filter(r => r.some(x => x.trim())); if (!clean.length) return {fields: [], leads: []};
+  const fields = clean[0].map(h => h.trim().toLowerCase().replace(/\s+/g, "_"));
+  return {fields, leads: clean.slice(1).map(r => Object.fromEntries(fields.map((f, i) => [f, (r[i] || "").trim()])))};
+}
+const draftVars = d => [...new Set([...BASE_VARS, ...parseCSV(d.csv).fields.filter(f => f !== "email"), ...d.custom])];
+const draftContacts = d => d.source === "CSV upload" && d.csv.trim() ? parseCSV(d.csv).leads.length : Math.max(0, +d.contacts || 0);
+const draftCapacity = d => d.inboxes.reduce((a, id) => a + (+d.limits[id] || 0), 0);
+const dayOffOf = (steps, k) => steps.slice(1, k + 1).reduce((a, x) => a + (+x.delay || 0), 0);
+
+// template-based "AI" (a production build would call an LLM here)
+function generateSequence(ai){
+  const greet = {Friendly: "Hi {{first_name}},", Direct: "{{first_name}},", Formal: "Dear {{first_name}},"}[ai.tone] || "Hi {{first_name}},";
+  const sign = {Friendly: "Cheers,\nChinmay", Direct: "Chinmay", Formal: "Best regards,\nChinmay Mehta"}[ai.tone] || "Chinmay";
+  const ask = {Friendly: "Would you be up for a quick 15-minute chat next week?", Direct: "Worth 15 minutes next week?", Formal: "Would you be available for a brief 15-minute call next week?"}[ai.tone];
+  const ctx = (ai.context || "").trim().replace(/\.$/, "");
+  const opener = ctx ? `Noticed that teams like {{company}} are often ${ctx.charAt(0).toLowerCase() + ctx.slice(1)}.` : "Reaching out because {{company}} looks like a strong fit.";
+  const lib = [
+    {delay: 0, subject: "{{first_name}}, quick question about {{company}}", body: `${greet}\n\n${opener}${ai.persona ? ` Most ${ai.persona} I talk to say the same.` : ""}\n\nWe built ${ai.offer || "something that helps"}.\n\n${ask}\n\n${sign}`},
+    {delay: 3, subject: "", body: `${greet}\n\nFollowing up on my last note. The short version: fewer tools, clearer numbers, and a clear next step every morning.\n\nHappy to send a 2-minute video if that's easier.\n\n${sign}`},
+    {delay: 4, subject: "An idea for {{company}}", body: `${greet}\n\nOne thing {{industry|B2B}} teams tell us: they don't know which email in a sequence actually books meetings. We show that by step, so you can double down on what works.\n\nOpen to a look?\n\n${sign}`},
+    {delay: 4, subject: "", body: `${greet}\n\nIs outbound a priority for {{company}} this quarter? If it's someone else's call, a pointer to the right person would help a lot.\n\n${sign}`},
+    {delay: 5, subject: "Should I close the loop?", body: `${greet}\n\nI haven't heard back, so I'll assume the timing is off. If that changes, just reply to this email.\n\n${sign}`}
+  ];
+  const n = Math.min(5, Math.max(1, +ai.count || 3));
+  const pickIdx = n === 1 ? [0] : n === 2 ? [0, 4] : n === 3 ? [0, 1, 4] : n === 4 ? [0, 1, 2, 4] : [0, 1, 2, 3, 4];
+  return pickIdx.map((i, k) => ({...lib[i], delay: k ? lib[i].delay : 0}));
+}
+
+function create(){
+  if (!UI.wiz) UI.wiz = newDraft();
+  const d = UI.wiz, s = UI.wizStep;
+  const stepper = `<div class="stepper" role="list">${WIZ.map((t, i) => `<button role="listitem" data-wstep="${i}" class="${i < s ? "done" : ""}" ${i === s ? 'aria-current="step"' : ""}><b>${i < s ? "✓" : i + 1}</b>${t}</button>`).join("")}</div>`;
+  const nav = `<div class="row between mt"><button class="btn ghost" data-wnav="-1" ${s === 0 ? "disabled" : ""}>Back</button>${s < WIZ.length - 1 ? `<button class="btn" data-wnav="1">Next: ${WIZ[s + 1]}</button>` : `<button class="btn" id="launch">Launch campaign</button>`}</div><p class="hint" id="wiz-err" style="color:var(--bad);text-align:right;margin:6px 0 0"></p>`;
+  const pages = [wizCampaign, wizAudience, wizEmails, wizSending, wizReview];
+  return head("Create Campaign", "Five short steps. You can go back and change anything before launch.") + stepper + pages[s](d) + nav;
+}
+function wizCampaign(d){
+  return `<div class="panel form" style="max-width:720px">
+    <div><label for="w-name">Campaign name</label><input id="w-name" data-w="name" value="${esc(d.name)}" placeholder="e.g. Heads of Sales — SaaS — October"></div>
+    <div><label for="w-goal">Goal</label><select id="w-goal" data-w="goal">${["Book demos","Start conversations","Promote an event","Re-engage old leads"].map(g => `<option ${g === d.goal ? "selected" : ""}>${g}</option>`).join("")}</select></div>
+    <div><label for="w-desc">Description <span class="hint">Optional. A note for you and your team.</span></label><textarea id="w-desc" data-w="description" rows="3">${esc(d.description)}</textarea></div>
+  </div>`;
+}
+function wizAudience(d){
+  const csv = parseCSV(d.csv), usingCSV = d.source === "CSV upload";
+  return `<div class="panel form" style="max-width:820px">
+    <div><label for="w-who">Who are you contacting?</label><input id="w-who" data-w="who" value="${esc(d.who)}" placeholder="e.g. Heads of Sales at US B2B SaaS companies, 50–500 employees"></div>
+    <div><label>Lead source</label><div class="seg" role="group" aria-label="Lead source">${["CSV upload","SalesGPT database","CRM import"].map(x => `<button data-source="${x}" aria-pressed="${d.source === x}">${x}</button>`).join("")}</div></div>
+    ${usingCSV ? `<div><label for="w-csv">Paste your CSV <span class="hint">First row is the header. Every column becomes a variable you can use in emails. Needs an <code>email</code> column.</span></label>
+      <textarea id="w-csv" data-w="csv" rows="6" style="font-family:var(--mono);font-size:12.5px" placeholder="email,first_name,company,job_title,industry&#10;sarah@northbeam.io,Sarah,Northbeam,VP Product,SaaS">${esc(d.csv)}</textarea>
+      <div class="row" style="margin-top:8px"><label class="btn ghost small" for="w-file" style="margin:0">Upload CSV file</label><input type="file" id="w-file" accept=".csv,text/csv" hidden>
+      <span class="hint" id="csv-note">${csv.leads.length ? `${csv.leads.length} contacts · ${csv.fields.includes("email") ? "email column found" : "no email column yet"}` : "No file yet, so the number below is used."}</span></div></div>` : ""}
+    <div style="max-width:260px"><label for="w-contacts">Number of contacts</label><input id="w-contacts" type="number" min="1" data-w="contacts" value="${draftContacts(d)}" ${usingCSV && csv.leads.length ? "disabled" : ""}>
+      <div class="hint" style="margin-top:4px">Campaign completion is measured against this number.</div></div>
+    <div><label>Optional filters</label><div class="cols">
+      <div><label class="hint" for="w-fi">Industry</label><input id="w-fi" data-w="filters.industry" value="${esc(d.filters.industry)}" placeholder="Any"></div>
+      <div><label class="hint" for="w-fl">Location</label><input id="w-fl" data-w="filters.location" value="${esc(d.filters.location)}" placeholder="Any"></div>
+      <div><label class="hint" for="w-fs">Company size</label><select id="w-fs" data-w="filters.size">${["","1–10","11–50","51–200","201–1,000","1,000+"].map(x => `<option value="${x}" ${x === d.filters.size ? "selected" : ""}>${x || "Any"}</option>`).join("")}</select></div>
+    </div></div>
+  </div>`;
+}
+function wizEmails(d){
+  const vars = draftVars(d), k = Math.min(d.pvStep, d.steps.length - 1);
+  return `<div class="grid two" style="align-items:start">
+    <div class="grid" style="gap:14px">
+      ${lisaCard("AI Email Generator", "Describe the offer. Lisa drafts the sequence, you edit it.", `<div class="form" style="gap:12px">
+        <div class="cols"><div><label for="ai-offer">Offer</label><input id="ai-offer" data-w="ai.offer" value="${esc(d.ai.offer)}"></div>
+        <div><label for="ai-persona">Persona</label><input id="ai-persona" data-w="ai.persona" value="${esc(d.ai.persona)}"></div></div>
+        <div class="cols"><div><label for="ai-tone">Tone</label><select id="ai-tone" data-w="ai.tone">${["Friendly","Direct","Formal"].map(t => `<option ${t === d.ai.tone ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+        <div><label for="ai-count">Number of emails</label><select id="ai-count" data-w="ai.count">${[1,2,3,4,5].map(n => `<option ${n == d.ai.count ? "selected" : ""}>${n}</option>`).join("")}</select></div></div>
+        <div><label for="ai-ctx">Key context</label><textarea id="ai-ctx" data-w="ai.context" rows="2">${esc(d.ai.context)}</textarea></div>
+        <div class="row"><button class="btn lisa" id="ai-gen" type="button">Generate Sequence with AI</button><span class="hint">Prototype: uses templates, not a live AI model. Replaces the emails below.</span></div></div>`)}
+      <div class="panel"><div class="row between" style="margin-bottom:10px"><h2 style="margin:0">Sequence</h2><span class="hint">${d.steps.length} ${d.steps.length === 1 ? "email" : "emails"} · last one on day ${dayOffOf(d.steps, d.steps.length - 1)}</span></div>
+        <label>Variables <span class="hint">Click to insert where your cursor is. Add a fallback like <code>{{industry|B2B}}</code> for empty values.</span></label>
+        <div class="chips" id="var-chips" style="margin-bottom:8px">${vars.map(v => `<button type="button" class="var" data-ins="${esc(v)}">{{${esc(v)}}}</button>`).join("")}</div>
+        <form class="row" id="addvar" style="flex-wrap:nowrap;max-width:360px;margin-bottom:14px"><input id="w-newvar" placeholder="Add custom variable, e.g. pain_point" aria-label="Custom variable name"><button class="btn ghost small" type="submit">Add</button></form>
+        <div class="grid" style="gap:10px">${d.steps.map((st, i) => `<div class="stepcard" data-card="${i}" style="${i === k ? "border-color:var(--accent)" : ""}">
+          <div class="top"><b>Step ${i + 1}${i === 0 ? " · first email" : ""}</b>
+            <span class="row">${i ? `<span class="delay">Wait <input type="number" min="1" max="30" id="d${i}" data-w="steps.${i}.delay" value="${st.delay}" aria-label="Days to wait"> days, if no reply</span><button type="button" class="linkbtn rm" data-rmstep="${i}">Remove</button>` : `<span class="hint">Sends on launch day</span>`}</span></div>
+          <div><label for="s${i}">Subject ${i ? `<span class="hint">Blank = reply in the same thread</span>` : ""}</label><input id="s${i}" data-w="steps.${i}.subject" data-merge value="${esc(st.subject)}" placeholder="${i ? "Re: " + esc(d.steps[0].subject) : ""}"></div>
+          <div><label for="b${i}">Body</label><textarea id="b${i}" data-w="steps.${i}.body" data-merge rows="${i ? 5 : 7}">${esc(st.body)}</textarea></div></div>`).join("")}</div>
+        ${d.steps.length < 6 ? `<button class="btn ghost mt" type="button" id="addstep">+ Add email</button>` : ""}</div>
+    </div>
+    <div class="panel" style="position:sticky;top:0"><h2>Preview</h2>${previewBlock(d)}</div>
+  </div>`;
+}
+function previewBlock(d){
+  const k = Math.min(d.pvStep, d.steps.length - 1);
+  return `<div class="seg" role="group" aria-label="Preview step" style="margin-bottom:10px">${d.steps.map((_, i) => `<button data-pvstep="${i}" aria-pressed="${i === k}">Step ${i + 1}</button>`).join("")}</div>
+  <div id="pv">${previewHTML(d, k)}</div>`;
+}
+function previewHTML(d, k){
+  const inbox = inboxById(d.inboxes[0]);
+  return `<div class="preview"><div class="meta"><div>From <b>${esc(inbox ? inbox.email : "choose an inbox")}</b></div><div>To <b>${esc(d.sample.first_name || "lead")}</b> · ${esc(d.sample.company || "")}</div><div>Subject <b>${merge(subjectFor(d.steps, k), d.sample, true)}</b></div><div>Day ${dayOffOf(d.steps, k)}${k ? " · only if no reply" : ""}</div></div>
+  <div class="body">${merge(d.steps[k].body, d.sample, true)}</div></div><p class="hint">Red text means this lead has no value for that variable.</p>`;
+}
+function wizSending(d){
+  const cap = draftCapacity(d), n = draftContacts(d), days = cap ? Math.ceil(n / cap) : 0;
+  return `<div class="grid halves" style="align-items:start">
+    <div class="panel form">
+      <div><label>Sending inboxes <span class="hint">Pick inboxes and set how many emails each can send per day.</span></label>
+        ${S.inboxes.map(i => `<div class="check"><input type="checkbox" id="ib-${i.id}" data-ibox="${i.id}" ${d.inboxes.includes(i.id) ? "checked" : ""}><div><label for="ib-${i.id}" style="margin:0">${esc(i.email)}</label><div class="hint">${esc(i.provider)} · ${esc(i.status)}</div></div>
+          <div class="delay"><input type="number" min="1" max="500" id="lim-${i.id}" data-w="limits.${i.id}" value="${d.limits[i.id]}" aria-label="Daily limit for ${esc(i.email)}"> /day</div></div>`).join("")}</div>
+      <div class="callout info" id="cap-line">${capLine(d)}</div>
+    </div>
+    <div class="panel form">
+      <div class="cols"><div><label for="w-tz">Timezone</label><select id="w-tz" data-w="tz">${TZS.map(t => `<option ${t === d.tz ? "selected" : ""}>${t}</option>`).join("")}</select></div></div>
+      <div class="check" style="border:0;padding:0"><input type="checkbox" id="w-local" data-wbool="localTime" ${d.localTime ? "checked" : ""}><div><label for="w-local" style="margin:0">Send at each lead's local time</label><div class="hint">Lisa uses the lead's timezone when known, and your timezone otherwise.</div></div></div>
+      <div class="cols"><div><label for="w-start">Start time</label><input type="time" id="w-start" data-w="start" value="${d.start}"></div><div><label for="w-end">Stop time</label><input type="time" id="w-end" data-w="end" value="${d.end}"></div></div>
+      <div><label>Sending days</label><div class="days">${[1,2,3,4,5,6,0].map(x => `<label><input type="checkbox" data-day="${x}" ${d.days.includes(x) ? "checked" : ""}>${DAYNAMES[x]}</label>`).join("")}</div></div>
+      <div><label>Lisa sending priority</label><div class="seg" role="group" aria-label="Sending priority">${Object.entries(PRIORITY).map(([k, v]) => `<button data-wprio="${k}" aria-pressed="${d.priority === k}">${v[0]}</button>`).join("")}</div>
+        <div class="hint" style="margin-top:6px">${PRIORITY[d.priority][1]}</div></div>
+    </div></div>`;
+}
+function capLine(d){
+  const cap = draftCapacity(d), n = draftContacts(d), perWeek = cap * d.days.length;
+  if (!cap) return "Choose at least one inbox to see your sending capacity.";
+  return `Combined capacity: <b>${n0(cap)} emails a day</b> across ${d.inboxes.length} ${d.inboxes.length === 1 ? "inbox" : "inboxes"}. First emails to all ${n0(n)} contacts take about <b>${Math.ceil(n / cap)} sending days</b>${perWeek ? ` (~${Math.ceil(n / perWeek)} weeks)` : ""} if Lisa used every slot for new leads. Follow-ups share the same capacity.`;
+}
+function wizReview(d){
+  const n = draftContacts(d), k = Math.min(d.pvStep, d.steps.length - 1), vars = draftVars(d);
+  const checks = [
+    [!!d.name.trim(), "Campaign has a name"], [n > 0, `${n0(n)} contacts`], [d.steps.every(s => s.body.trim()) && !!d.steps[0].subject.trim(), `${d.steps.length} emails written`],
+    [d.inboxes.length > 0, `${d.inboxes.length} sending ${d.inboxes.length === 1 ? "inbox" : "inboxes"} selected`], [d.days.length > 0, `Sends ${d.days.map(x => DAYNAMES[x]).join(", ") || "no days"}, ${d.start}–${d.end}`]
+  ];
+  return `<div class="grid two" style="align-items:start">
+    <div class="grid" style="gap:14px">
+      <div class="panel"><h2>After someone replies</h2>
+        <div class="check"><input type="radio" name="ar" id="ar-stop" data-ar="stop" ${!d.afterReply.continue ? "checked" : ""}><div><label for="ar-stop" style="margin:0">Stop the sequence <span class="pill p-info">Default</span></label><div class="hint">A reply ends the sequence for that lead. You can resume it by hand from the Inbox.</div></div></div>
+        <div class="check"><input type="radio" name="ar" id="ar-cont" data-ar="continue" ${d.afterReply.continue ? "checked" : ""}><div><label for="ar-cont" style="margin:0">Continue the campaign after a reply</label>
+          <div class="delay" style="margin-top:6px">Send the next email after <input type="number" min="1" max="30" id="ar-days" data-w="afterReply.days" value="${d.afterReply.days}" ${d.afterReply.continue ? "" : "disabled"} aria-label="Days after reply"> days</div></div></div>
+        <div class="callout" style="margin-top:10px"><b>Always stops, whatever you choose:</b> meeting booked, unsubscribe.</div>
+        <p class="hint" style="margin:10px 0 0" id="ar-sum">${arSummary(d)}</p></div>
+      <div class="panel"><h2>Ready to launch?</h2>${checks.map(([ok, t]) => `<div class="row" style="gap:8px;padding:4px 0">${ok ? pill("✓", "p-good") : pill("!", "p-bad")}<span>${esc(t)}</span></div>`).join("")}</div>
+    </div>
+    <div class="panel"><h2>Email preview</h2>
+      <label>Recipient variables <span class="hint">Edit to test personalization</span></label>
+      <div class="cols" style="grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px">${vars.map(v => `<div><label class="hint" for="sv-${esc(v)}" style="font-family:var(--mono)">${esc(v)}</label><input id="sv-${esc(v)}" data-w="sample.${esc(v)}" value="${esc(d.sample[v] || "")}"></div>`).join("")}</div>
+      ${previewBlock(d)}
+      <div class="mt"><label for="w-test">Send a test email</label><form class="row" id="testform" style="flex-wrap:nowrap"><input id="w-test" type="email" data-w="testEmail" value="${esc(d.testEmail)}" placeholder="you@company.com"><button class="btn ghost" type="submit">Send Test Email</button></form>
+      <div class="hint" style="margin-top:4px">Prototype: shows a confirmation only. No email is sent.</div></div>
+    </div></div>`;
+}
+const arSummary = d => d.afterReply.continue ? `If a lead replies, Lisa waits ${d.afterReply.days} days and then sends their next email, unless they booked a meeting or unsubscribed.` : "If a lead replies, their sequence stops right away.";
+
+/* wizard events */
+function setPath(obj, path, val){ const ks = path.split("."); let o = obj; ks.slice(0, -1).forEach(k => o = o[k]); o[ks.at(-1)] = val; }
+function liveWiz(){
+  const d = UI.wiz; if (!d) return;
+  const pv = $("#pv"); if (pv) pv.innerHTML = previewHTML(d, Math.min(d.pvStep, d.steps.length - 1));
+  const cl = $("#cap-line"); if (cl) cl.innerHTML = capLine(d);
+  const ar = $("#ar-sum"); if (ar) ar.textContent = arSummary(d);
+  const cn = $("#csv-note"); if (cn){ const c = parseCSV(d.csv); if (c.leads[0]) d.sample = Object.fromEntries(Object.entries(c.leads[0]).filter(([k]) => k !== "email")); cn.textContent = c.leads.length ? `${c.leads.length} contacts · ${c.fields.includes("email") ? "email column found" : "no email column yet"}` : "No file yet, so the number below is used."; const ci = $("#w-contacts"); if (ci){ ci.disabled = !!c.leads.length; if (c.leads.length) ci.value = c.leads.length; } }
+}
+let lastMerge = "b0";
+document.addEventListener("focusin", e => {
+  if (UI.view !== "create" || !UI.wiz) return;
+  if (e.target.hasAttribute && e.target.hasAttribute("data-merge")) lastMerge = e.target.id;
+  const card = e.target.closest && e.target.closest("[data-card]");
+  if (card && +card.dataset.card !== UI.wiz.pvStep){ UI.wiz.pvStep = +card.dataset.card; $$("[data-card]").forEach(x => x.style.borderColor = x === card ? "var(--accent)" : ""); $$("[data-pvstep]").forEach(b => b.setAttribute("aria-pressed", +b.dataset.pvstep === UI.wiz.pvStep)); liveWiz(); }
+});
+document.addEventListener("input", e => {
+  const t = e.target; if (UI.view !== "create" || !UI.wiz || !t.dataset.w) return;
+  let v = t.value; if (t.type === "number") v = Math.max(0, +v || 0);
+  if (t.dataset.w === "ai.count") v = +v;
+  setPath(UI.wiz, t.dataset.w, v); liveWiz();
+});
+document.addEventListener("change", e => {
+  const t = e.target, d = UI.wiz; if (UI.view !== "create" || !d) return;
+  if (t.dataset.ibox){ const id = t.dataset.ibox; d.inboxes = t.checked ? [...new Set([...d.inboxes, id])] : d.inboxes.filter(x => x !== id); liveWiz(); }
+  if (t.dataset.day !== undefined){ const x = +t.dataset.day; d.days = t.checked ? [...new Set([...d.days, x])].sort() : d.days.filter(y => y !== x); }
+  if (t.dataset.wbool) d[t.dataset.wbool] = t.checked;
+  if (t.dataset.ar){ d.afterReply.continue = t.dataset.ar === "continue"; const di = $("#ar-days"); if (di) di.disabled = !d.afterReply.continue; liveWiz(); }
+  if (t.id === "w-file" && t.files[0]){ const fr = new FileReader(); fr.onload = () => { d.csv = fr.result; const c = parseCSV(d.csv); if (c.leads[0]) d.sample = Object.fromEntries(Object.entries(c.leads[0]).filter(([k]) => k !== "email")); render(); toast("CSV loaded"); }; fr.readAsText(t.files[0]); }
+});
+function wizValidate(step){
+  const d = UI.wiz;
+  if (step === 0 && !d.name.trim()) return "Give the campaign a name.";
+  if (step === 1){ if (!draftContacts(d)) return "Add contacts: paste a CSV or enter how many contacts."; if (d.source === "CSV upload" && d.csv.trim() && !parseCSV(d.csv).fields.includes("email")) return "Your CSV needs an email column."; }
+  if (step === 2){ if (!d.steps[0].subject.trim()) return "Step 1 needs a subject."; const i = d.steps.findIndex(s => !s.body.trim() || s.body.trim() === "Hi {{first_name}},"); if (i >= 0) return `Step ${i + 1} needs a body. Write it or use the AI generator.`; }
+  if (step === 3){ if (!d.inboxes.length) return "Choose at least one sending inbox."; if (!d.days.length) return "Choose at least one sending day."; if (d.start >= d.end) return "Stop time must be after start time."; }
+  return "";
+}
+document.addEventListener("click", e => {
+  if (UI.view !== "create" || !UI.wiz) return;
+  const d = UI.wiz, t = e.target;
+  const nav = t.closest("[data-wnav]");
+  if (nav){ const dir = +nav.dataset.wnav; if (dir > 0){ const err = wizValidate(UI.wizStep); if (err){ $("#wiz-err").textContent = err; return; } } UI.wizStep += dir; render(); $("#main").scrollTop = 0; return; }
+  const ws = t.closest("[data-wstep]");
+  if (ws){ const to = +ws.dataset.wstep; for (let i = 0; i < to; i++){ const err = wizValidate(i); if (err){ UI.wizStep = i; render(); $("#wiz-err").textContent = err; return; } } UI.wizStep = to; render(); return; }
+  const src = t.closest("[data-source]"); if (src){ d.source = src.dataset.source; render(); return; }
+  const wp = t.closest("[data-wprio]"); if (wp){ d.priority = wp.dataset.wprio; render(); return; }
+  const pv = t.closest("[data-pvstep]"); if (pv){ d.pvStep = +pv.dataset.pvstep; render(); return; }
+  const rm = t.closest("[data-rmstep]"); if (rm){ d.steps.splice(+rm.dataset.rmstep, 1); d.pvStep = 0; render(); return; }
+  if (t.id === "addstep"){ const n = d.steps.length; d.steps.push({delay: n === 1 ? 3 : 4, subject: "", body: "Hi {{first_name}},\n\n"}); d.pvStep = n; lastMerge = "b" + n; render(); $("#b" + n)?.focus(); return; }
+  if (t.id === "ai-gen"){ d.steps = generateSequence(d.ai); d.pvStep = 0; render(); toast(`Lisa drafted ${d.steps.length} emails. Edit anything you like.`); return; }
+  const ins = t.closest("[data-ins]");
+  if (ins){ const el = document.getElementById(lastMerge) || $("#b0"); if (!el) return; const tok = `{{${ins.dataset.ins}}}`; const a = el.selectionStart ?? el.value.length, b = el.selectionEnd ?? a;
+    el.value = el.value.slice(0, a) + tok + el.value.slice(b); el.focus(); el.setSelectionRange(a + tok.length, a + tok.length); el.dispatchEvent(new Event("input", {bubbles: true})); return; }
+  if (t.id === "launch") launch();
+});
+document.addEventListener("submit", e => {
+  if (UI.view !== "create" || !UI.wiz) return;
+  if (e.target.id === "addvar"){ e.preventDefault(); const v = $("#w-newvar").value.trim().toLowerCase().replace(/[^\w]+/g, "_").replace(/^_|_$/g, ""); if (!v) return; if (!UI.wiz.custom.includes(v) && !BASE_VARS.includes(v)) UI.wiz.custom.push(v); UI.wiz.sample[v] = UI.wiz.sample[v] || ""; render(); toast(`Added {{${v}}}`); }
+  if (e.target.id === "testform"){ e.preventDefault(); const em = UI.wiz.testEmail.trim(); if (!/\S+@\S+\.\S+/.test(em)) return toast("Enter a valid email address for the test."); toast(`Test of step ${Math.min(UI.wiz.pvStep, UI.wiz.steps.length - 1) + 1} ready for ${em} (prototype: not actually sent)`); }
+});
+function launch(){
+  for (let i = 0; i < 4; i++){ const err = wizValidate(i); if (err){ UI.wizStep = i; render(); $("#wiz-err").textContent = err; return; } }
+  const d = UI.wiz, n = draftContacts(d), csv = parseCSV(d.csv);
+  d.inboxes.forEach(id => { const ib = inboxById(id); if (ib && d.limits[id]) ib.limit = +d.limits[id]; });
+  const rows = csv.leads.length ? csv.leads.slice(0, 8) : ["Alex Rivera","Jordan Lee","Sam Patel","Riya Menon","Chris Young","Dana Brooks"].map(nm => ({first_name: nm.split(" ")[0], name: nm, company: "Example Co", email: nm.split(" ")[0].toLowerCase() + "@example.com"}));
+  const c = {id: uid(), name: d.name.trim(), goal: d.goal, description: d.description, status: "running", live: true, contacts: n, sent: 0, delivery: 0, replies: 0, positive: 0, meetings: 0,
+    steps: d.steps.map((s, i) => ({...s, delay: i ? Math.max(1, +s.delay || 1) : 0})), byStep: d.steps.map((_, i) => ({active: 0, replied: 0, meeting: 0, completed: 0, scheduled: i === 0 ? n : 0})),
+    series: {sent: [0], bounced: [0], replies: [0], positive: [0], meetings: [0]}, inboxes: [...d.inboxes], priority: d.priority, tz: d.tz, localTime: d.localTime, start: d.start, end: d.end, days: [...d.days],
+    afterReply: {...d.afterReply}, createdAt: Date.now(), audience: {who: d.who, source: d.source},
+    leads: rows.map(r => ({name: r.name || [r.first_name, r.last_name].filter(Boolean).join(" ") || r.email, company: r.company || "—", email: r.email || "", step: 1, status: "Scheduled", next: "Step 1 · Today"}))};
+  S.campaigns.push(c); save(); UI.wiz = null; UI.wizStep = 0;
+  notify("campaign", `${c.name} launched to ${n0(c.contacts)} contacts`, {view: "campaigns", campaign: c.id}); save();
+  go("campaigns", {campaign: c.id}); toast(`${c.name} is running. Lisa is sending the first emails (demo speed).`);
+}
+</script>
+<script>
+/* ---------- Inbox ---------- */
+const FILTERS = {
+  "All": () => true,
+  "Unread": t => !t.read,
+  "Interested": isInterested,
+  "Replied": t => t.messages.at(-1).who === "us",
+  "No Reply": needsReply,
+  "Unsubscribe": t => t.cls === "Unsubscribe",
+  "Meeting Booked": t => t.status === "booked",
+  "Favorites": t => t.fav
+};
+const FILTER_HINT = {"Unread": "Conversations you haven't opened", "Replied": "You've answered", "No Reply": "Waiting on your answer"};
+function inboxList(){
+  const q = UI.search.trim().toLowerCase();
+  return S.threads.filter(t => FILTERS[UI.inboxFilter](t) || (UI.inboxFilter === "Unread" && t.id === UI.thread)).filter(t => !q || [t.name, t.company, t.email, t.cls, ...t.messages.map(m => m.text)].join(" ").toLowerCase().includes(q))
+    .sort((a, b) => b.messages.at(-1).at - a.messages.at(-1).at);
+}
+function inbox(){
+  const list = inboxList();
+  let t = S.threads.find(x => x.id === UI.thread && list.includes(x));
+  // only a conversation you actually open counts as read; the first one is just shown
+  if (t && !t.read && UI.keepUnread !== t.id){ t.read = true; save(); renderNav(); }
+  t = t || list[0];
+  UI.shown = t ? t.id : null;
+  return head("Inbox", "Every reply across all sending inboxes, in one place.") + `
+  <div class="row between" style="margin-bottom:12px">
+    <div class="seg" role="group" aria-label="Filter conversations">${Object.keys(FILTERS).map(f => `<button data-ifilter="${f}" aria-pressed="${UI.inboxFilter === f}" title="${FILTER_HINT[f] || ""}">${f} <span style="opacity:.7">${S.threads.filter(FILTERS[f]).length}</span></button>`).join("")}</div>
+    <div class="row" style="flex-wrap:nowrap"><button class="btn ghost small" id="allread" ${S.threads.some(t => !t.read) ? "" : "disabled"}>Mark all as read</button><input id="isearch" type="search" placeholder="Search conversations" value="${esc(UI.search)}" style="max-width:240px" aria-label="Search conversations"></div>
+  </div>
+  <div class="inbox"><div class="panel threads" id="tlist" style="max-height:74vh;overflow:auto">${list.length ? list.map(threadRow).join("") : `<p class="muted" style="padding:16px">No conversations match.</p>`}</div>
+  <div id="tview">${t ? threadView(t) : `<div class="panel muted">Pick a conversation.</div>`}</div></div>`;
+}
+function threadView(t){
+  const c = campaignById(t.campaignId), ib = inboxById(t.inboxId), [st, sc] = threadState(t), last = t.messages.at(-1);
+  const locked = t.cls === "Unsubscribe" ? "Unsubscribed leads can't be resumed." : t.status === "booked" ? "A booked meeting keeps the sequence stopped." : "";
+  const seqBox = t.seq === "running"
+    ? `<div class="callout info row between"><span>Sequence is running again for this lead. Next email: Step ${Math.min(t.step + 1, c ? c.steps.length : t.step + 1)}.</span><button class="btn ghost small" data-tact="pause">Pause Sequence</button></div>`
+    : `<div class="callout ${t.seq === "paused" ? "" : "good"} row between"><span>${t.seq === "paused" ? "You paused this lead's sequence." : "Sequence automatically stopped when they replied."} ${locked}</span><button class="btn ghost small" data-tact="resume" ${locked ? "disabled" : ""}>Resume sequence</button></div>`;
+  return `<div class="panel form" style="gap:14px">
+    <div class="row between" style="align-items:flex-start"><div><h2 style="margin:0;font-size:18px">${esc(t.name)}</h2><div class="muted">${esc(t.title || "")}${t.title ? " at " : ""}${esc(t.company)} · ${esc(t.email)}</div></div>
+      <div class="row">${pill(st, sc)}<button class="btn ghost small" data-tact="${t.read ? "unread" : "read"}">${t.read ? "Mark as unread" : "Mark as read"}</button><button class="star" data-tact="fav" aria-pressed="${t.fav}" aria-label="Favorite">${t.fav ? "★" : "☆"}</button></div></div>
+    <div class="facts"><div><span>Sending account</span>${esc(ib ? ib.email : "—")}</div><div><span>Campaign</span>${c ? `<button class="linkbtn" data-camp="${c.id}">${esc(c.name)}</button>` : "—"}</div>
+      <div><span>Current step</span>Step ${t.step}${c ? ` of ${c.steps.length}` : ""}</div><div><span>Last message</span>${fmtAgo(last.at)}</div></div>
+    ${seqBox}
+    <div class="row">
+      <button class="btn small" data-tact="reply">Reply</button>
+      ${isInterested(t) ? `<button class="btn ghost small" disabled>✓ Interested</button>` : `<button class="btn ghost small" data-tact="int" ${t.cls === "Unsubscribe" ? 'disabled title="Unsubscribed leads can\'t be marked interested"' : ""}>Mark Interested</button>`}
+      <button class="btn ghost small" data-tact="notint" ${t.cls === "Not Interested" ? "disabled" : ""}>Mark Not Interested</button>
+      ${t.status === "booked" ? `<button class="btn ghost small" data-tact="unbook">Mark as Not Booked</button>` : `<button class="btn ghost small" data-tact="book" ${t.cls === "Unsubscribe" ? "disabled" : ""}>Mark Meeting Booked</button>`}
+    </div>
+    ${UI.bookOpen === t.id ? `<form class="callout info" id="bookform" style="display:grid;gap:8px"><b>When is the meeting?</b><div class="cols"><div><label class="hint" for="bk-d">Date</label><input type="date" id="bk-d" required value="${new Date(Date.now() + 2 * DAY).toISOString().slice(0, 10)}"></div><div><label class="hint" for="bk-t">Time</label><input type="time" id="bk-t" required value="11:00"></div></div><div class="row"><button class="btn small" type="submit">Save meeting</button><button class="btn ghost small" type="button" data-tact="bookcancel">Cancel</button></div></form>` : ""}
+    ${t.status === "booked" && t.meeting ? `<div class="callout good">Meeting booked for <b>${new Date(t.meeting.date + "T00:00").toLocaleDateString("en-US", {weekday: "short", month: "short", day: "numeric"})} at ${esc(t.meeting.time)}</b>. Sequence stopped. Counted in Dashboard and Analytics.</div>` : ""}
+    <div class="cols"><div><label for="t-cls">Reply classification</label><select id="t-cls"><option value="" ${!t.cls ? "selected" : ""}>Not classified yet</option>${CLASSES.map(x => `<option ${x === t.cls ? "selected" : ""}>${x}</option>`).join("")}</select></div>
+      <div><label for="t-note">Internal note <span class="hint">Only your team sees this</span></label><input id="t-note" value="${esc(t.note)}" placeholder="e.g. Wants pricing for 3 reps"></div></div>
+    <div><h3>Conversation</h3><div class="grid" style="gap:10px">${t.messages.map(m => `<div class="bubble ${m.who === "them" ? "them" : ""}"><div class="h"><b>${m.who === "them" ? esc(t.name) : "You · " + esc(ib ? ib.email : "")}</b><span>${m.subject ? esc(m.subject) + " · " : ""}${new Date(m.at).toLocaleString("en-US", {month: "short", day: "numeric", hour: "numeric", minute: "2-digit"})}</span></div><div class="t">${esc(m.text)}</div></div>`).join("")}</div></div>
+    <form id="replyform" class="form" style="gap:8px"><label for="t-reply" style="margin:0">Your reply</label><textarea id="t-reply" rows="4" placeholder="Write a reply to ${esc(t.first_name || t.name)}…"></textarea>
+      <div class="row between"><span class="hint">Prototype: saved to the thread, not actually sent.</span><button class="btn" type="submit">Send reply</button></div></form>
+  </div>`;
+}
+const curThread = () => S.threads.find(x => x.id === UI.thread) || inboxList()[0];
+document.addEventListener("input", e => {
+  if (e.target.id === "isearch"){ UI.search = e.target.value; const l = inboxList(); $("#tlist").innerHTML = l.length ? l.map(threadRow).join("") : `<p class="muted" style="padding:16px">No conversations match.</p>`; }
+});
+document.addEventListener("change", e => {
+  const t = curThread(); if (UI.view !== "inbox" || !t) return;
+  if (e.target.id === "t-cls"){ const b4 = snap(t); t.cls = e.target.value; if (t.cls) notify(t.cls === "Interested" || t.cls === "Meeting Requested" ? "interested" : t.cls === "Not Interested" || t.cls === "Unsubscribe" ? "notint" : "info", `${t.name} classified as ${t.cls}`, {view: "inbox", thread: t.id}); if (t.cls === "Unsubscribe" && t.status === "booked"){ t.status = ""; t.meeting = null; } syncCounts(t, b4); if (t.cls === "Unsubscribe" || t.cls === "Not Interested") t.seq = "stopped"; save(); render(); toast(t.cls ? `Classified as ${t.cls}` : "Classification cleared"); }
+  if (e.target.id === "t-note"){ t.note = e.target.value; save(); toast("Note saved"); }
+});
+document.addEventListener("click", e => {
+  const f = e.target.closest("[data-ifilter]"); if (f){ UI.inboxFilter = f.dataset.ifilter; UI.thread = null; UI.keepUnread = null; render(); return; }
+  if (e.target.id === "allread"){ S.threads.forEach(t => t.read = true); UI.keepUnread = null; save(); render(); toast("All conversations marked as read"); return; }
+  const th = e.target.closest("[data-thread]"); if (th){ UI.thread = th.dataset.thread; UI.bookOpen = null; UI.keepUnread = null; if (UI.view !== "inbox"){ UI.inboxFilter = "All"; go("inbox"); } else render(); return; }
+  const a = e.target.closest("[data-tact]"); if (!a) return;
+  const t = curThread(); if (!t) return;
+  UI.thread = t.id;
+  const act = a.dataset.tact, b4 = snap(t);
+  if (act === "fav"){ t.fav = !t.fav; }
+  if (act === "unread"){ t.read = false; UI.keepUnread = t.id; toast("Marked as unread"); }
+  if (act === "read"){ t.read = true; UI.keepUnread = null; toast("Marked as read"); }
+  if (act === "pause"){ t.seq = "paused"; notify("paused", `Sequence paused for ${t.name}`, {view: "inbox", thread: t.id}); toast("Sequence paused for " + t.name); }
+  if (act === "resume"){ t.seq = "running"; notify("running", `Sequence resumed for ${t.name}`, {view: "inbox", thread: t.id}); toast("Sequence resumed for " + t.name); }
+  if (act === "int"){ t.cls = "Interested"; notify("interested", `${t.name} marked interested · ${t.company}`, {view: "inbox", thread: t.id}); toast(`${t.name} marked interested. They now show under the Interested filter.`); }
+  if (act === "notint"){ t.cls = "Not Interested"; t.seq = "stopped"; notify("notint", `${t.name} marked not interested`, {view: "inbox", thread: t.id}); if (t.status === "booked"){ t.status = ""; t.meeting = null; } toast("Marked not interested. Sequence stopped."); }
+  if (act === "book"){ UI.bookOpen = t.id; }
+  if (act === "bookcancel"){ UI.bookOpen = null; }
+  if (act === "unbook"){ notify("info", `Meeting with ${t.name} marked as not booked`, {view: "inbox", thread: t.id}); t.status = ""; t.meeting = null; toast("Marked as not booked"); }
+  if (act === "reply"){ $("#t-reply")?.focus(); return; }
+  syncCounts(t, b4); save(); render();
+});
+document.addEventListener("submit", e => {
+  const t = curThread();
+  if (e.target.id === "bookform" && t){ e.preventDefault(); const b4 = snap(t); t.status = "booked"; t.seq = "stopped"; t.meeting = {date: $("#bk-d").value, time: $("#bk-t").value}; if (!["Meeting Requested","Interested"].includes(t.cls)) t.cls = "Meeting Requested"; syncCounts(t, b4); notify("meeting", `Meeting booked with ${t.name} · ${new Date(t.meeting.date + "T00:00").toLocaleDateString("en-US", {month: "short", day: "numeric"})} at ${t.meeting.time}`, {view: "inbox", thread: t.id}); UI.bookOpen = null; save(); render(); toast("Meeting booked. Sequence stopped."); }
+  if (e.target.id === "replyform" && t){ e.preventDefault(); const txt = $("#t-reply").value.trim(); if (!txt) return toast("Write something first."); t.messages.push({who: "us", at: Date.now(), text: txt}); save(); render(); toast("Reply saved to the thread (prototype: not sent)"); }
+});
+
+/* ---------- Analytics ---------- */
+function analytics(){
+  const k = periodKpis(S.period);
+  const tot = {active: 0, scheduled: 0, replied: 0, meeting: 0, completed: 0}; S.campaigns.forEach(c => { const l = leadCounts(c); Object.keys(tot).forEach(x => tot[x] += l[x]); });
+  const allLeads = Object.values(tot).reduce((a, b) => a + b, 0) || 1;
+  const b = bestStep();
+  const segs = [["Active", tot.active, "var(--accent)"], ["Yet to contact", tot.scheduled, "var(--line)"], ["Replied", tot.replied, "var(--good)"], ["Meeting booked", tot.meeting, "var(--lisa)"], ["Finished, no reply", tot.completed, "var(--warn)"]];
+  const byCamp = S.campaigns.map(c => ({c, s: cStats(c)})), maxR = Math.max(5, ...byCamp.map(x => x.s.replyRate));
+  return head("Analytics", "How your outreach is converting.", periodSeg()) +
+  lisaCard("Lisa · " + periodLabel(), "", qa(
+    `${k.replyRate}% of emails got a reply and ${plural(k.meetings, "meeting")} ${k.meetings === 1 ? "was" : "were"} booked.`,
+    b ? `Step ${b.step} of ${esc(b.c.name)} works best (${b.rate}% replies).` : "Not enough data to compare steps yet.",
+    tot.scheduled ? `${n0(tot.scheduled)} leads haven't been contacted yet.` : "Every lead has been contacted.")) + `
+  <div class="grid halves mt">
+    <div class="panel"><h2 style="margin-bottom:2px">From sent to meetings</h2><p class="hint" style="margin:0 0 12px">${periodLabel().replace(/^./, c => c.toUpperCase())} · all campaigns</p>
+      ${hb("Emails sent", k.sent, k.sent, "var(--accent)")}
+      ${hb("Delivered", k.delivered, k.sent, "var(--good)", k.delivery + "%")}
+      ${hb("Replies", k.replies, k.sent, "var(--warn)", k.replyRate + "%")}
+      ${hb("Positive replies", k.positive, k.sent, "var(--good)")}
+      ${hb("Meetings booked", k.meetings, k.sent, "var(--lisa)")}</div>
+    <div class="panel"><h2 style="margin-bottom:2px">Where your leads are now</h2><p class="hint" style="margin:0 0 12px">All campaigns · all time</p>
+      <div class="queue" style="height:20px" role="img" aria-label="Lead status breakdown">${segs.map(([, v, col]) => `<i style="width:${v / allLeads * 100}%;background:${col}"></i>`).join("")}</div>
+      <div class="grid" style="gap:6px;margin-top:12px">${segs.map(([l, v, col]) => `<div class="row between"><span class="legend" style="margin:0"><span style="--c:${col}">${l}</span></span><span class="num">${n0(v)}</span></div>`).join("")}</div></div>
+  </div>
+  <div class="panel mt wide"><h2 style="margin-bottom:2px">Reply rate by campaign</h2><p class="hint" style="margin:0 0 12px">Replies ÷ emails sent · all time</p>${byCamp.map(x => hb(`<button class="cname" style="font-weight:600" data-camp="${x.c.id}">${esc(x.c.name)}</button>`, x.s.replyRate, maxR, "var(--accent)", x.s.sent ? x.s.replyRate + "%" : "—")).join("") || `<p class="muted">No campaigns yet.</p>`}</div>
+  <div class="panel mt" id="seqperf">${seqPerf()}</div>`;
+}
+const hb = (label, val, max, color, right) => `<div class="hbar"><span class="name">${label}</span><span class="track"><i style="width:${max ? cap100(val / max * 100) : 0}%;background:${color}"></i></span><span class="num">${right ?? n0(val)}</span></div>`;
+function seqPerf(){
+  const F = UI.seqF, cs = S.campaigns.filter(c => F.campaign === "all" || c.id === F.campaign);
+  const maxSteps = Math.max(1, ...cs.map(c => c.steps.length));
+  if (F.step !== "all" && +F.step > maxSteps) F.step = "all";
+  // reply rate per step (the question this panel answers)
+  const steps = Array.from({length: maxSteps}, (_, i) => { let sent = 0, rep = 0; cs.forEach(c => { const p = stepPerf(c)[i]; if (p){ sent += p.sent; rep += p.replies; } }); return {step: i + 1, sent, rate: p1(rep, sent)}; });
+  const maxRate = Math.max(5, ...steps.map(x => x.rate));
+  // where leads are, filtered
+  const key = {Active: "active", Scheduled: "scheduled", Replied: "replied", Completed: "completed", "Meeting Booked": "meeting"};
+  const rows = [];
+  cs.forEach(c => c.byStep.forEach((bs, i) => { if (F.step !== "all" && +F.step !== i + 1) return;
+    LEAD_STATUSES.forEach(st => { if (F.status !== "all" && F.status !== st) return; const n = bs[key[st]]; if (n) rows.push({c, step: i + 1, status: st, leads: n}); }); }));
+  const total = rows.reduce((a, r) => a + r.leads, 0);
+  const sel = (id, label, cur, opts) => `<div><label class="hint" for="${id}">${label}</label><select id="${id}">${opts.map(([v, t]) => `<option value="${v}" ${String(v) === String(cur) ? "selected" : ""}>${esc(t)}</option>`).join("")}</select></div>`;
+  return `<h2>Sequence performance</h2>
+  <div class="cols" style="margin-bottom:14px">
+    ${sel("sf-c", "Campaign", F.campaign, [["all", "All campaigns"], ...S.campaigns.map(c => [c.id, c.name])])}
+    ${sel("sf-s", "Step", F.step, [["all", "All steps"], ...Array.from({length: maxSteps}, (_, i) => [i + 1, "Step " + (i + 1)])])}
+    ${sel("sf-l", "Lead status", F.status, [["all", "All statuses"], ...LEAD_STATUSES.map(x => [x, x])])}
+  </div>
+  <div class="grid halves">
+    <div><h3>Reply rate by step</h3>${steps.map(x => `<div style="opacity:${F.step === "all" || +F.step === x.step ? 1 : .35}">${hb("Step " + x.step, x.rate, maxRate, "var(--accent)", x.sent ? x.rate + "%" : "—")}</div>`).join("")}</div>
+    <div><h3>Leads matching filters <span class="muted" style="font-weight:500">${n0(total)}</span></h3>
+      <div class="tbl" style="max-height:300px;overflow:auto"><table><thead><tr>${F.campaign === "all" ? "<th>Campaign</th>" : ""}<th>Step</th><th>Status</th><th class="num">Leads</th></tr></thead><tbody>
+      ${rows.length ? rows.map(r => `<tr>${F.campaign === "all" ? `<td class="name" style="max-width:180px">${esc(r.c.name)}</td>` : ""}<td>Step ${r.step}</td><td>${leadPill(r.status)}</td><td class="num">${n0(r.leads)}</td></tr>`).join("") : `<tr><td colspan="4" class="muted">No leads match.</td></tr>`}
+      </tbody></table></div></div>
+  </div>`;
+}
+document.addEventListener("change", e => {
+  const m = {"sf-c": "campaign", "sf-s": "step", "sf-l": "status"}[e.target.id];
+  if (m){ UI.seqF[m] = e.target.value; $("#seqperf").innerHTML = seqPerf(); }
+});
+
+/* ---------- Email Accounts ---------- */
+function accounts(){
+  const total = S.inboxes.reduce((a, i) => a + (+i.limit || 0), 0);
+  return head("Email Accounts", "The inboxes Lisa sends from, and how much each can send per day.") + `
+  <div class="callout info" style="margin-bottom:14px">Total sending capacity: <b>${n0(total)} emails a day</b> across ${S.inboxes.length} inboxes. First emails and follow-ups share this capacity.</div>
+  <div class="panel"><div class="tbl"><table><thead><tr><th>Inbox</th><th>Provider</th><th>Status</th><th>Daily limit</th><th>Used by</th><th></th></tr></thead><tbody>
+  ${S.inboxes.map(i => { const used = S.campaigns.filter(c => c.inboxes.includes(i.id)); return `<tr><td><b>${esc(i.email)}</b></td><td>${esc(i.provider)}</td><td>${pill(i.status, i.status === "Healthy" ? "p-good" : "p-warn")}</td>
+    <td><input type="number" min="1" max="500" value="${i.limit}" data-limit="${i.id}" style="width:86px" aria-label="Daily limit for ${esc(i.email)}"></td>
+    <td>${used.length ? used.map(c => esc(c.name)).join("<br>") : `<span class="muted">No campaigns</span>`}</td><td><button class="btn ghost small" data-rminbox="${i.id}">Remove</button></td></tr>`; }).join("")}
+  </tbody></table></div></div>
+  <form class="panel form mt" id="addinbox" style="max-width:720px"><h2 style="margin:0">Connect an inbox</h2>
+    <div class="cols"><div><label for="ai-email">Email address</label><input id="ai-email" type="email" required placeholder="you@company.com"></div>
+    <div><label for="ai-prov">Provider</label><select id="ai-prov"><option>Google Workspace</option><option>Microsoft 365</option><option>SMTP</option></select></div>
+    <div><label for="ai-lim">Daily limit</label><input id="ai-lim" type="number" min="1" max="500" value="25"></div></div>
+    <div class="row"><button class="btn" type="submit">Connect inbox</button><span class="hint">Prototype: adds the inbox to this page only. New inboxes start in warm-up; stay under about 30 a day for the first weeks.</span></div>
+  </form>`;
+}
+document.addEventListener("change", e => { const id = e.target.dataset && e.target.dataset.limit; if (!id) return; const ib = inboxById(id); ib.limit = Math.max(1, +e.target.value || 1); save(); toast("Daily limit saved"); });
+document.addEventListener("submit", e => { if (e.target.id !== "addinbox") return; e.preventDefault();
+  S.inboxes.push({id: uid(), email: $("#ai-email").value.trim(), provider: $("#ai-prov").value, limit: +$("#ai-lim").value || 25, status: "Warming up"}); save(); render(); toast("Inbox connected (prototype)"); });
+document.addEventListener("click", e => { const b = e.target.closest("[data-rminbox]"); if (!b) return;
+  if (S.campaigns.some(c => c.status === "running" && c.inboxes.includes(b.dataset.rminbox))) return toast("A running campaign uses this inbox. Pause it or change its inboxes first.");
+  S.inboxes = S.inboxes.filter(i => i.id !== b.dataset.rminbox); S.campaigns.forEach(c => c.inboxes = c.inboxes.filter(x => x !== b.dataset.rminbox)); save(); render(); toast("Inbox removed"); });
+
+/* ---------- Settings ---------- */
+function settings(){
+  const s = S.settings, w = S.workspace;
+  const sw = (key, on, locked) => `<button class="switch" role="switch" aria-checked="${on}" ${locked ? "disabled" : `data-set="${key}"`} aria-label="${key}"></button>`;
+  const line = (title, hint, control) => `<div class="check" style="align-items:center"><div><b>${title}</b><div class="hint">${hint}</div></div>${control}</div>`;
+  return head("Settings", "Defaults for new campaigns. You can change any of them per campaign.") + `
+  <div class="grid halves" style="align-items:start">
+    <div class="panel form"><h2 style="margin:0">Workspace</h2>
+      <div><label for="st-user">Your name <span class="hint">Used in your Dashboard greeting</span></label><input id="st-user" data-sw="user" value="${esc(w.user || "")}"></div>
+      <div><label for="st-ws">Workspace name</label><input id="st-ws" data-sw="name" value="${esc(w.name)}"></div>
+      <div><label for="st-wtz">Default timezone</label><select id="st-wtz" data-sw="tz">${TZS.map(t => `<option ${t === w.tz ? "selected" : ""}>${t}</option>`).join("")}</select></div></div>
+    <div class="panel form"><h2 style="margin:0">Default sending schedule</h2>
+      <div><label for="st-tz">Timezone</label><select id="st-tz" data-ss="tz">${TZS.map(t => `<option ${t === s.tz ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+      ${line("Send at each lead's local time by default", "Uses the lead's timezone when we know it.", sw("localTime", s.localTime))}
+      <div class="cols"><div><label for="st-start">Start time</label><input type="time" id="st-start" data-ss="start" value="${s.start}"></div><div><label for="st-end">End time</label><input type="time" id="st-end" data-ss="end" value="${s.end}"></div></div>
+      <div><label>Sending days</label><div class="days">${[1,2,3,4,5,6,0].map(x => `<label><input type="checkbox" data-sday="${x}" ${s.days.includes(x) ? "checked" : ""}>${DAYNAMES[x]}</label>`).join("")}</div></div></div>
+    <div class="panel"><h2>Lisa & sequence defaults</h2>
+      <label>Default sending priority</label><div class="seg" role="group" aria-label="Default sending priority">${Object.entries(PRIORITY).map(([k, v]) => `<button data-sprio="${k}" aria-pressed="${s.priority === k}">${v[0]}</button>`).join("")}</div>
+      <p class="hint" style="margin:6px 0 8px">${PRIORITY[s.priority][1]}</p>
+      ${line("Stop when a lead replies", "Can be changed per campaign (continue after X days).", sw("stopReply", s.stopReply))}
+      ${line("Stop when a lead unsubscribes", "Always on. Required for compliance.", sw("", true, true))}
+      ${line("Stop when a meeting is booked", "Always on. Nobody gets a follow-up after booking.", sw("", true, true))}</div>
+    <div class="panel"><h2>Notifications & compliance</h2>
+      ${line("Reply notifications", "Tell me when someone replies.", sw("notifyReplies", s.notifyReplies))}
+      ${line("Sending paused notifications", "Tell me if a campaign or inbox stops sending.", sw("notifyPaused", s.notifyPaused))}
+      ${line("Compliance reminders", "Remind me to include an unsubscribe option and respect local rules.", sw("compliance", s.compliance))}
+      <div class="check" style="align-items:center"><div><b>Demo data</b><div class="hint">Reset everything on this page back to the sample campaigns.</div></div><button class="btn ghost small" id="reset">Reset demo</button></div></div>
+  </div>`;
+}
+document.addEventListener("change", e => {
+  if (UI.view !== "settings") return; const t = e.target;
+  if (t.dataset.sw){ S.workspace[t.dataset.sw] = t.value; save(); toast("Saved"); }
+  if (t.dataset.ss){ S.settings[t.dataset.ss] = t.value; save(); toast("Saved"); }
+  if (t.dataset.sday !== undefined){ const x = +t.dataset.sday; S.settings.days = t.checked ? [...new Set([...S.settings.days, x])] : S.settings.days.filter(y => y !== x); save(); toast("Saved"); }
+});
+let resetArmed = false;
+document.addEventListener("click", e => {
+  if (UI.view !== "settings") return;
+  const s = e.target.closest("[data-set]"); if (s){ S.settings[s.dataset.set] = !S.settings[s.dataset.set]; save(); render(); toast("Saved"); return; }
+  const p = e.target.closest("[data-sprio]"); if (p){ S.settings.priority = p.dataset.sprio; save(); render(); return; }
+  if (e.target.id === "reset"){ if (!resetArmed){ resetArmed = true; e.target.textContent = "Click again to reset"; e.target.classList.add("danger"); e.target.style.color = "#fff"; return; }
+    resetArmed = false; S = seed(); save(); UI.wiz = null; render(); toast("Demo data reset"); }
+});
+
+/* ---------- global events ---------- */
+document.addEventListener("click", e => {
+  const g = e.target.closest("[data-go]"); if (g){ const opts = {}; if (g.dataset.filter){ opts.inboxFilter = g.dataset.filter; opts.thread = null; } go(g.dataset.go, opts); return; }
+  const pr = e.target.closest("[data-period]"); if (pr){ S.period = pr.dataset.period; save(); render(); return; }
+  const cm = e.target.closest("[data-camp]"); if (cm){ go("campaigns", {campaign: cm.dataset.camp}); return; }
+  if (e.target.closest("[data-back]")){ UI.campaign = null; UI.seqEdit = null; UI.setEdit = null; render(); return; }
+  const tg = e.target.closest("[data-toggle]"); if (tg){ const c = campaignById(tg.dataset.toggle); if (!c || c.status === "completed") return; c.status = c.status === "running" ? "paused" : "running"; notify(c.status, `${c.name} ${c.status === "running" ? "is running again" : "was paused"}`, {view: "campaigns", campaign: c.id}); save(); render(); toast(`${c.name} is ${c.status === "running" ? "running" : "paused"}`); return; }
+  const pz = e.target.closest("[data-prio]"); if (pz){ const c = campaignById(UI.campaign); if (c){ c.priority = pz.dataset.prio; save(); render(); toast(`Sending priority: ${PRIORITY[c.priority][0]}`); } return; }
+  const ak = e.target.closest("[data-ask]"); if (ak){ UI.lisaAnswer = {q: ak.dataset.ask, a: askLisa(ak.dataset.ask)}; render(); return; }
+});
+document.addEventListener("submit", e => { if (e.target.id !== "askform") return; e.preventDefault(); const q = $("#askq").value.trim(); if (!q) return; UI.lisaAnswer = {q, a: askLisa(q)}; render(); });
+
+/* ---------- demo sending for campaigns launched here ---------- */
+// every 2.5s a live campaign sends a small batch: first emails and due follow-ups, following its sending priority
+setInterval(() => {
+  let changed = false;
+  S.campaigns.filter(c => c.live && c.status === "running").forEach(c => {
+    const cap = Math.max(2, Math.round(capacityFor(c) / 6)), b = c.byStep, k = c.steps.length;
+    c.ticks = (c.ticks || 0) + 1;
+    // demo clock: 1 day = 2 ticks (5 seconds); a step's follow-up only goes out once its wait has passed
+    const open = i => i < k - 1 && c.steps.slice(1, i + 2).reduce((a, x) => a + (+x.delay || 0), 0) * 2 <= c.ticks;
+    const dueFU = b.reduce((a, x, i) => a + (open(i) ? x.active : 0), 0);
+    let fu = c.priority === "newfirst" ? 0 : Math.min(dueFU, c.priority === "followups" ? cap : Math.ceil(cap / 2));
+    let nw = Math.min(b[0].scheduled, cap - fu); if (c.priority === "newfirst") fu = Math.min(dueFU, cap - nw);
+    for (let i = 0; i < nw; i++){ b[0].scheduled--; c.sent++; c.series.sent[0]++; b[0].active++; }
+    for (let i = 0; i < fu; i++){ const from = b.findIndex((x, j) => open(j) && x.active > 0); if (from < 0) break; b[from].active--; b[from + 1].active++; c.sent++; c.series.sent[0]++; }
+    // replies trickle in from people already emailed
+    b.forEach((x, i) => { if (x.active > 0 && Math.random() < .08){ x.active--; x.replied++; c.replies++; c.series.replies[0]++; newReply(c, i); } });
+    // the last step's active leads finish the sequence
+    if (b[k - 1].active > 2 && Math.random() < .3){ b[k - 1].active--; b[k - 1].completed++; }
+    c.delivery = p1(c.sent - c.series.bounced[0], c.sent);
+    // move a few sample leads along so the lead table feels alive
+    c.leads.forEach(l => { if (Math.random() < .12 && l.status !== "Replied" && l.status !== "Completed"){ if (l.status === "Scheduled"){ l.status = "Active"; l.next = k > 1 ? `Step 2 · in ${c.steps[1].delay} days` : "None"; } else if (l.step < k){ l.step++; l.next = l.step < k ? `Step ${l.step + 1} · in ${c.steps[l.step].delay} days` : "None"; } else { l.status = "Completed"; l.next = "None"; } } });
+    if (b.every(x => !x.scheduled && !x.active)){ c.status = "completed"; notify("campaign", `${c.name} completed. Every lead finished the sequence.`, {view: "campaigns", campaign: c.id}); }
+    changed = true;
+  });
+  if (changed){ save(); if (["dashboard","campaigns","analytics","inbox"].includes(UI.view) && !document.activeElement.matches("input,textarea,select")) render(); else renderNav(); }
+}, 2500);
+
+// a demo reply from a lead in a campaign launched here, so the whole flow shows up in the Inbox
+const DEMO_REPLIES = [["Interested", "Thanks for reaching out. This looks useful, can we talk next week?"], ["Question", "How does pricing work for a small team?"], ["Not Interested", "Not a priority for us right now."], ["Interested", "Send me more details please."]];
+function newReply(c, i){
+  const lead = c.leads.find(l => !S.threads.some(t => t.email === l.email && t.campaignId === c.id)) || {name: "New lead", company: "—", email: "lead@example.com"};
+  const [, text] = DEMO_REPLIES[Math.floor(Math.random() * DEMO_REPLIES.length)], cls = "";
+  const sample = {first_name: (lead.name || "").split(" ")[0], company: lead.company};
+  const msgs = c.steps.slice(0, i + 1).map((s, k) => ({who: "us", at: Date.now() - (i - k + 1) * 6e4, subject: merge(subjectFor(c.steps, k), sample), text: merge(s.body, sample)}));
+  msgs.push({who: "them", at: Date.now(), text});
+  const t = {id: uid(), fav: false, read: false, note: "", meeting: null, seq: c.afterReply.continue ? "running" : "stopped", name: lead.name, first_name: sample.first_name, title: "", company: lead.company, email: lead.email, campaignId: c.id, inboxId: c.inboxes[0], step: i + 1, cls, messages: msgs};
+  S.threads.push(t); lead.status = "Replied"; lead.next = "Stopped";
+  if (isPositive(t)){ c.positive++; c.series.positive[0]++; }
+  notify("reply", `New reply from ${lead.name} · ${c.name}`, {view: "inbox", thread: t.id});
+  toast(`New reply from ${lead.name} (${c.name})`);
+}
+document.addEventListener("click", e => { const d = e.target.closest("[data-delcamp]"); if (!d) return;
+  if (d.dataset.armed !== "1"){ d.dataset.armed = "1"; d.textContent = "Click again to delete"; d.classList.add("danger"); d.style.color = "#fff"; return; }
+  { const dc = campaignById(d.dataset.delcamp); if (dc) notify("info", `${dc.name} was deleted`); }
+  S.campaigns = S.campaigns.filter(c => c.id !== d.dataset.delcamp); S.threads = S.threads.filter(t => t.campaignId !== d.dataset.delcamp); save(); go("campaigns", {campaign: null}); toast("Campaign deleted"); });
+
+/* ---------- render ---------- */
+function render(){
+  if (!PAGES.some(p => p[0] === UI.view)) UI.view = "dashboard";
+  renderNav();
+  const main = $("#main"), y = main.scrollTop;
+  main.innerHTML = ({dashboard, campaigns, create, inbox, analytics, accounts, settings})[UI.view]();
+  placeMenu();
+  const old = $("#notes-layer"); if (old) old.remove();
+  if (UI.notesOpen){ const d = document.createElement("div"); d.id = "notes-layer"; d.innerHTML = notesDrawer(); document.body.appendChild(d); }
+  main.scrollTop = y;
+}
+// keep "days ago" history aligned with today
+(function align(){ const off = offsetDays(); if (off > 0){ S.campaigns.forEach(c => Object.values(c.series).forEach(a => a.unshift(...Array(off).fill(0)))); S.seededAt += off * DAY; save(); } })();
+render();
+</script>
+
+</body>
+</html>
